@@ -464,3 +464,67 @@ class TestPhase1fReferenceEndpointNumericalIds:
         team = parse_response(payload, Team).data[0]
         assert team.abbreviation is None
         assert team.numerical_id == 9001
+
+
+class TestPhase2cTeamMetadata:
+    """TeamRef carries the OpticOdds-sourced metadata fields backfilled by
+    api-adapters PR #499: logo / city / mascot / conference / division.
+    All five are optional — present for ~93% of teams (logo) with similar
+    coverage on the rest. The atlas ``nickname`` field is intentionally
+    NOT exposed as a model attribute because it duplicates ``mascot``.
+    """
+
+    def test_teamref_with_full_phase2c_metadata(self):
+        ref = TeamRef.model_validate({
+            "id": "arizona_diamondbacks",
+            "numerical_id": 1,
+            "name": "Arizona Diamondbacks",
+            "abbreviation": "ARI",
+            "logo": "https://cdn.opticodds.com/team-logos/baseball/18.png",
+            "city": "Arizona",
+            "mascot": "Diamondbacks",
+            "conference": "NL",
+            "division": "West Division",
+        })
+        assert ref.logo == "https://cdn.opticodds.com/team-logos/baseball/18.png"
+        assert ref.city == "Arizona"
+        assert ref.mascot == "Diamondbacks"
+        assert ref.conference == "NL"
+        assert ref.division == "West Division"
+
+    def test_teamref_phase2c_fields_optional(self):
+        """Servers that haven't shipped Phase 2c yet keep working — every
+        new field defaults to None and the legacy fields parse normally.
+        """
+        ref = TeamRef.model_validate({
+            "id": "novak_djokovic",
+            "numerical_id": 9001,
+            "name": "Novak Djokovic",
+        })
+        assert ref.logo is None
+        assert ref.city is None
+        assert ref.mascot is None
+        assert ref.conference is None
+        assert ref.division is None
+        # Legacy attributes still resolve correctly.
+        assert ref.id == "novak_djokovic"
+        assert ref.numerical_id == 9001
+
+    def test_teamref_serialization_omits_unset_phase2c_fields(self):
+        """``model_dump(exclude_none=True)`` keeps the wire compact for
+        rows missing the optional metadata — i.e. our request bodies and
+        round-trip serialization don't pollute output with null logos.
+        """
+        ref = TeamRef(
+            id="los_angeles_lakers",
+            numerical_id=206,
+            name="Los Angeles Lakers",
+            abbreviation="LAL",
+        )
+        dumped = ref.model_dump(exclude_none=True)
+        assert "logo" not in dumped
+        assert "city" not in dumped
+        assert "mascot" not in dumped
+        assert "conference" not in dumped
+        assert "division" not in dumped
+        assert dumped["abbreviation"] == "LAL"

@@ -39,12 +39,24 @@ class TeamRef(BaseModel):
 
     ``abbreviation`` is only present for ~1500 team-sport entities; absent
     for individual-sport competitors (tennis players, MMA fighters, etc).
+
+    Phase 2c (May 2026) added five OpticOdds-sourced metadata fields,
+    backfilled into the atlas: ``logo`` (~93% coverage), plus ``city``,
+    ``mascot``, ``conference``, ``division``. All optional — unmapped
+    rows simply leave the field absent rather than emitting null.
+    The atlas ``nickname`` field is intentionally NOT exposed here
+    because it duplicates ``mascot`` per the seeding convention.
     """
 
     id: str | None = None
     numerical_id: int | None = None
     name: str | None = None
     abbreviation: str | None = None
+    logo: str | None = None
+    city: str | None = None
+    mascot: str | None = None
+    conference: str | None = None
+    division: str | None = None
 
     model_config = {"extra": "allow"}
 
