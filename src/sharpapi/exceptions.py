@@ -1,8 +1,7 @@
 """SharpAPI exceptions and canonical error-code registry.
 
-The error codes here mirror ``pkg/errcodes/errcodes.go`` in sharp-api-go, which
-is the single source of truth for every code the API emits. Keep this file in
-sync when new codes are added upstream.
+The codes here mirror the canonical set the SharpAPI server emits.
+Keep this file in sync when new codes are added upstream.
 """
 
 from __future__ import annotations
@@ -65,9 +64,10 @@ class StreamError(SharpAPIError):
 # =============================================================================
 # Canonical error-code registry
 #
-# Mirrors sharp-api-go/pkg/errcodes/errcodes.go. When upstream adds a new code,
-# add it here too and update the matching description. Each code maps to the
-# Python exception class that ``handle_errors`` (in ``_base.py``) raises for it.
+# Mirrors the canonical SharpAPI server error-code set. When upstream adds
+# a new code, add it here too and update the matching description. Each
+# code maps to the Python exception class that ``handle_errors`` (in
+# ``_base.py``) raises for it.
 # =============================================================================
 
 # HTTP error codes — emitted via REST handlers (httputil.WriteJSONError).
@@ -174,10 +174,10 @@ ERROR_CODE_TO_EXCEPTION: dict[str, type[SharpAPIError]] = {
     UPSTREAM_ERROR: SharpAPIError,
 }
 
-# Deprecated aliases. ``bad_request`` and ``invalid_request`` were both collapsed
-# into ``validation_error`` in sharp-api-go. Kept here so that older API
-# responses (or user code still checking these strings) resolve correctly.
-# TODO: remove after 2026-10.
+# Deprecated aliases. ``bad_request`` and ``invalid_request`` were both
+# collapsed into ``validation_error`` server-side. Kept here so that older
+# API responses (or user code still checking these strings) resolve
+# correctly. Will be removed after 2026-10.
 DEPRECATED_CODE_ALIASES: dict[str, str] = {
     "bad_request": VALIDATION_ERROR,
     "invalid_request": VALIDATION_ERROR,
