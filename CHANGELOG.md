@@ -2,6 +2,15 @@
 
 All notable changes to the `sharpapi` Python SDK are documented here.
 
+## 0.3.2 — 2026-05-07
+
+### Changed
+
+- Update `Repository` and `Changelog` URLs in package metadata to use the
+  canonical `SharpAPI-Python` repo name (was lowercase `sharpapi-python`,
+  redirected by GitHub but worth making canonical on PyPI). Metadata-only
+  release; no code changes.
+
 ## 0.3.1 — 2026-05-06
 
 ### Added — TeamRef metadata

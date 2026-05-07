@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sharpapi"
-version = "0.3.1"
+version = "0.3.2"
 description = "Official Python SDK for the SharpAPI real-time sports betting odds API"
 readme = "README.md"
 license = "MIT"
@@ -35,8 +35,8 @@ test = ["pytest>=8.0", "pytest-asyncio>=0.23", "respx>=0.21"]
 [project.urls]
 Homepage = "https://sharpapi.io"
 Documentation = "https://docs.sharpapi.io/sdks/python"
-Repository = "https://github.com/Sharp-API/sharpapi-python"
-Changelog = "https://github.com/Sharp-API/sharpapi-python/releases"
+Repository = "https://github.com/Sharp-API/SharpAPI-Python"
+Changelog = "https://github.com/Sharp-API/SharpAPI-Python/releases"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sharpapi"]
