@@ -23,7 +23,7 @@ class OddsValue(BaseModel):
 
 
 # =============================================================================
-# Nested reference objects (Phase 1f — OpticOdds parity)
+# Nested reference objects
 # =============================================================================
 #
 # These structured ref objects ship alongside the legacy flat fields on every
@@ -40,12 +40,10 @@ class TeamRef(BaseModel):
     ``abbreviation`` is only present for ~1500 team-sport entities; absent
     for individual-sport competitors (tennis players, MMA fighters, etc).
 
-    Phase 2c (May 2026) added five OpticOdds-sourced metadata fields,
-    backfilled into the atlas: ``logo`` (~93% coverage), plus ``city``,
-    ``mascot``, ``conference``, ``division``. All optional — unmapped
-    rows simply leave the field absent rather than emitting null.
-    The atlas ``nickname`` field is intentionally NOT exposed here
-    because it duplicates ``mascot`` per the seeding convention.
+    Optional metadata fields (``logo``, ``city``, ``mascot``, ``conference``,
+    ``division``) are populated for the majority of major-league teams
+    (~93% coverage on ``logo``, similar on the rest). Unmapped rows simply
+    leave the field absent rather than emitting null.
     """
 
     id: str | None = None
@@ -226,7 +224,7 @@ class OddsLine(BaseModel):
     deep_link: str | None = None
     player_name: str | None = None
     stat_category: str | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None
@@ -288,7 +286,7 @@ class EVOpportunity(BaseModel):
     detected_at: str | None = None
     external_event_id: str | None = None
     selection_id: str | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None
@@ -317,7 +315,7 @@ class ArbitrageLeg(BaseModel):
     external_event_id: str | None = None
     selection_id: str | None = None
     market_id: str | None = None
-    # Phase 1f — optional structured book ref on each leg.
+    # Optional structured book ref on each leg.
     sportsbook_ref: EntityRef | None = None
 
 
@@ -347,7 +345,7 @@ class ArbitrageOpportunity(BaseModel):
     stat_category: str | None = None
     legs: list[ArbitrageLeg]
     detected_at: str | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None
@@ -411,7 +409,7 @@ class MiddleOpportunity(BaseModel):
     gap_size: float | None = Field(None, alias="gapSize")
     potential_profit: float | None = Field(None, alias="potentialProfit")
     legs: list[ArbitrageLeg] | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None
@@ -463,7 +461,7 @@ class LowHoldOpportunity(BaseModel):
     player_name: str | None = None
     stat_category: str | None = None
     detected_at: str | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None
@@ -482,7 +480,7 @@ class Sport(BaseModel):
     slug: str
     active: bool
     event_count: int | None = None
-    # Phase 1f — optional integer atlas ID, additive.
+    # Optional integer numerical ID, additive.
     numerical_id: int | None = None
 
 
@@ -493,7 +491,7 @@ class League(BaseModel):
     sport_id: str | None = None
     country: str | None = None
     active: bool
-    # Phase 1f — optional integer atlas ID, additive.
+    # Optional integer numerical ID, additive.
     numerical_id: int | None = None
 
 
@@ -504,15 +502,15 @@ class Sportsbook(BaseModel):
     active: bool
     regions: list[str] | None = None
     features: list[str] | None = None
-    # Phase 1f — optional integer atlas ID, additive.
+    # Optional integer numerical ID, additive.
     numerical_id: int | None = None
 
 
 class Team(BaseModel):
     """A team / competitor returned by the ``/teams`` reference endpoint.
 
-    Phase 1f addition. ``abbreviation`` is only present for ~1500 team-sport
-    entities and is absent for individual-sport competitors.
+    ``abbreviation`` is only present for ~1500 team-sport entities and is
+    absent for individual-sport competitors.
     """
 
     id: str
@@ -534,7 +532,7 @@ class Event(BaseModel):
     start_time: str | None = None
     is_live: bool = False
     status: str | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None
@@ -549,7 +547,7 @@ class Market(BaseModel):
     selection_count: int | None = None
     book_count: int | None = None
     books: list[str] | None = None
-    # Phase 1f — optional integer atlas ID, additive.
+    # Optional integer numerical ID, additive.
     numerical_id: int | None = None
 
 
@@ -570,7 +568,7 @@ class ClosingOddsLine(BaseModel):
     line: float | None = None
     player_name: str | None = None
     stat_category: str | None = None
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     market_ref: EntityRef | None = None
     sportsbook_ref: EntityRef | None = None
 
@@ -586,7 +584,7 @@ class ClosingSnapshot(BaseModel):
     event_start_time: str | None = None
     captured_at: str | None = None
     books: dict[str, list[ClosingOddsLine]] = Field(default_factory=dict)
-    # Phase 1f — optional structured refs (additive, non-breaking).
+    # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
     sport_ref: SportRef | None = None

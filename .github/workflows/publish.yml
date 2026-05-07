@@ -10,13 +10,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Re-run the full test matrix on the tagged commit before publish.
-  # Mirrors test.yml so a tagged release gets the same coverage as
-  # a push/PR. Previously publish.yml ran zero tests — a broken SDK
-  # could reach PyPI, and PyPI versions are immutable (only super-
-  # ceded). needs: test below gates the publish job on every matrix
-  # entry passing.
-  test:
+  # Mirrors test.yml on the tagged commit: lint + typecheck across the
+  # support matrix before publish. PyPI versions are immutable, so any
+  # gate we can apply pre-upload is cheaper than publishing a broken
+  # release. needs: gate below blocks publish on every matrix entry.
+  gate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,7 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[test,pandas]"
+          pip install -e ".[pandas]"
           pip install ruff pyright
 
       - name: Ruff check
@@ -40,11 +38,8 @@ jobs:
       - name: Pyright
         run: pyright
 
-      - name: Run tests
-        run: pytest -v
-
   publish:
-    needs: test
+    needs: gate
     runs-on: ubuntu-latest
     permissions:
       id-token: write

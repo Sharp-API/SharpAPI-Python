@@ -4,25 +4,22 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 
 ## 0.3.1 — 2026-05-06
 
-### Added — TeamRef metadata (Phase 2c)
+### Added — TeamRef metadata
 
-`TeamRef` now exposes five additional optional fields sourced from
-OpticOdds and backfilled into the SharpAPI atlas:
+`TeamRef` now exposes five additional optional fields:
 
-- `logo` — full CDN URL (currently `cdn.opticodds.com`; mirrors to
-  `cdn.sharpapi.io` ship in a follow-up). ~93% of teams are populated.
+- `logo` — full CDN URL. ~93% of teams are populated.
 - `city` — e.g. `"Arizona"` for the Diamondbacks.
 - `mascot` — e.g. `"Diamondbacks"`.
 - `conference` — e.g. `"NL"`, `"AFC"`, `"Western"`.
 - `division` — e.g. `"West Division"`, `"NL East"`, `"Pacific Division"`.
 
 All five default to `None` and are additive — existing 0.3.0 code keeps
-working unchanged. The redundant atlas `nickname` field is intentionally
-not exposed because it duplicates `mascot`.
+working unchanged.
 
 ## 0.3.0 — 2026-05-06
 
-### Added — OpticOdds-parity nested refs (Phase 1f)
+### Added — nested refs
 
 Every odds row, opportunity row, and reference-list row may now carry
 optional structured reference objects alongside the existing flat fields.

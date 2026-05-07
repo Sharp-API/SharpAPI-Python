@@ -9,7 +9,7 @@ description = "Official Python SDK for the SharpAPI real-time sports betting odd
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [{ name = "SharpAPI", email = "support@sharpapi.io" }]
+authors = [{ name = "SharpAPI", email = "hello@sharpapi.io" }]
 keywords = ["sports-betting", "odds", "arbitrage", "ev", "api", "real-time", "pinnacle"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -40,6 +40,25 @@ Changelog = "https://github.com/Sharp-API/sharpapi-python/releases"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sharpapi"]
+
+# Explicit sdist whitelist. Hatchling's default sdist would otherwise
+# include everything not gitignored (CI workflows, dependabot config,
+# .gitignore itself), all of which would land on PyPI on every release.
+# Keep this in sync with what we actually want users who do
+# `pip install --no-binary :all: sharpapi` to receive.
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/sharpapi",
+  "README.md",
+  "LICENSE",
+  "CHANGELOG.md",
+  "SECURITY.md",
+  "pyproject.toml",
+]
+exclude = [
+  ".gitignore",
+  ".github",
+]
 
 [tool.ruff]
 target-version = "py310"

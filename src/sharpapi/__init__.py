@@ -54,8 +54,8 @@ from .models import (
     RateLimitInfo,
     ResponseMeta,
     Sport,
-    Sportsbook,
     SportRef,
+    Sportsbook,
     Team,
     TeamRef,
 )

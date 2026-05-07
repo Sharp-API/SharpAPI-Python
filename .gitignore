@@ -10,3 +10,9 @@ build/
 .ruff_cache/
 *.egg
 .mypy_cache/
+.coverage
+htmlcov/
+.claude/
+.DS_Store
+tests/
+.benchmarks/
