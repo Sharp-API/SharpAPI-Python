@@ -38,6 +38,7 @@ from .models import (
     ArbitrageOpportunity,
     ClosingOddsLine,
     ClosingSnapshot,
+    EntityRef,
     Event,
     EVOpportunity,
     GameState,
@@ -54,10 +55,13 @@ from .models import (
     ResponseMeta,
     Sport,
     Sportsbook,
+    SportRef,
+    Team,
+    TeamRef,
 )
 from .streaming import EventStream
 
-__version__ = "0.2.6"
+__version__ = "0.3.0"
 
 __all__ = [
     # Clients
@@ -71,6 +75,7 @@ __all__ = [
     "ArbitrageOpportunity",
     "ClosingOddsLine",
     "ClosingSnapshot",
+    "EntityRef",
     "EVOpportunity",
     "Event",
     "GameState",
@@ -86,7 +91,10 @@ __all__ = [
     "RateLimitInfo",
     "ResponseMeta",
     "Sport",
+    "SportRef",
     "Sportsbook",
+    "Team",
+    "TeamRef",
     # Streaming
     "EventStream",
     # Exceptions

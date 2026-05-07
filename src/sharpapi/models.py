@@ -22,6 +22,57 @@ class OddsValue(BaseModel):
     probability: float
 
 
+# =============================================================================
+# Nested reference objects (Phase 1f — OpticOdds parity)
+# =============================================================================
+#
+# These structured ref objects ship alongside the legacy flat fields on every
+# odds row, opportunity row, and reference-list row. All fields are optional
+# and additive — clients on older API versions simply receive ``None``.
+#
+# Wire format uses snake_case (``sport_ref``, ``league_ref``, ``market_ref``,
+# ``sportsbook_ref``) which Python attribute names match directly.
+
+
+class TeamRef(BaseModel):
+    """Structured team reference attached to ``home`` / ``away``.
+
+    ``abbreviation`` is only present for ~1500 team-sport entities; absent
+    for individual-sport competitors (tennis players, MMA fighters, etc).
+    """
+
+    id: str | None = None
+    numerical_id: int | None = None
+    name: str | None = None
+    abbreviation: str | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class SportRef(BaseModel):
+    """Structured sport reference attached to ``sport_ref``."""
+
+    id: str | None = None
+    name: str | None = None
+    numerical_id: int | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class EntityRef(BaseModel):
+    """Structured reference for league / market / sportsbook objects.
+
+    Used by ``league_ref``, ``market_ref``, and ``sportsbook_ref`` on
+    every odds, opportunity, and reference row.
+    """
+
+    id: str | None = None
+    label: str | None = None
+    numerical_id: int | None = None
+
+    model_config = {"extra": "allow"}
+
+
 class Pagination(BaseModel):
     limit: int
     offset: int
@@ -163,6 +214,13 @@ class OddsLine(BaseModel):
     deep_link: str | None = None
     player_name: str | None = None
     stat_category: str | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
+    market_ref: EntityRef | None = None
+    sportsbook_ref: EntityRef | None = None
 
 
 # =============================================================================
@@ -218,6 +276,13 @@ class EVOpportunity(BaseModel):
     detected_at: str | None = None
     external_event_id: str | None = None
     selection_id: str | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
+    market_ref: EntityRef | None = None
+    sportsbook_ref: EntityRef | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -240,6 +305,8 @@ class ArbitrageLeg(BaseModel):
     external_event_id: str | None = None
     selection_id: str | None = None
     market_id: str | None = None
+    # Phase 1f — optional structured book ref on each leg.
+    sportsbook_ref: EntityRef | None = None
 
 
 class ArbitrageOpportunity(BaseModel):
@@ -268,6 +335,12 @@ class ArbitrageOpportunity(BaseModel):
     stat_category: str | None = None
     legs: list[ArbitrageLeg]
     detected_at: str | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
+    market_ref: EntityRef | None = None
 
 
 # =============================================================================
@@ -326,6 +399,12 @@ class MiddleOpportunity(BaseModel):
     gap_size: float | None = Field(None, alias="gapSize")
     potential_profit: float | None = Field(None, alias="potentialProfit")
     legs: list[ArbitrageLeg] | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
+    market_ref: EntityRef | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -372,6 +451,12 @@ class LowHoldOpportunity(BaseModel):
     player_name: str | None = None
     stat_category: str | None = None
     detected_at: str | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
+    market_ref: EntityRef | None = None
 
 
 # =============================================================================
@@ -385,6 +470,8 @@ class Sport(BaseModel):
     slug: str
     active: bool
     event_count: int | None = None
+    # Phase 1f — optional integer atlas ID, additive.
+    numerical_id: int | None = None
 
 
 class League(BaseModel):
@@ -394,6 +481,8 @@ class League(BaseModel):
     sport_id: str | None = None
     country: str | None = None
     active: bool
+    # Phase 1f — optional integer atlas ID, additive.
+    numerical_id: int | None = None
 
 
 class Sportsbook(BaseModel):
@@ -403,6 +492,25 @@ class Sportsbook(BaseModel):
     active: bool
     regions: list[str] | None = None
     features: list[str] | None = None
+    # Phase 1f — optional integer atlas ID, additive.
+    numerical_id: int | None = None
+
+
+class Team(BaseModel):
+    """A team / competitor returned by the ``/teams`` reference endpoint.
+
+    Phase 1f addition. ``abbreviation`` is only present for ~1500 team-sport
+    entities and is absent for individual-sport competitors.
+    """
+
+    id: str
+    name: str | None = None
+    sport: str | None = None
+    league: str | None = None
+    abbreviation: str | None = None
+    numerical_id: int | None = None
+
+    model_config = {"extra": "allow"}
 
 
 class Event(BaseModel):
@@ -414,6 +522,11 @@ class Event(BaseModel):
     start_time: str | None = None
     is_live: bool = False
     status: str | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
 
 
 class Market(BaseModel):
@@ -424,6 +537,8 @@ class Market(BaseModel):
     selection_count: int | None = None
     book_count: int | None = None
     books: list[str] | None = None
+    # Phase 1f — optional integer atlas ID, additive.
+    numerical_id: int | None = None
 
 
 # =============================================================================
@@ -443,6 +558,9 @@ class ClosingOddsLine(BaseModel):
     line: float | None = None
     player_name: str | None = None
     stat_category: str | None = None
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    market_ref: EntityRef | None = None
+    sportsbook_ref: EntityRef | None = None
 
 
 class ClosingSnapshot(BaseModel):
@@ -456,6 +574,11 @@ class ClosingSnapshot(BaseModel):
     event_start_time: str | None = None
     captured_at: str | None = None
     books: dict[str, list[ClosingOddsLine]] = Field(default_factory=dict)
+    # Phase 1f — optional structured refs (additive, non-breaking).
+    home: TeamRef | None = None
+    away: TeamRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
 
 
 # =============================================================================
