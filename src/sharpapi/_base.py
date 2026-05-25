@@ -33,6 +33,15 @@ RETRY_BASE_DELAY = 0.5
 RETRY_MAX_DELAY = 4.0
 
 
+def normalize_base_url(base_url: str) -> str:
+    """Return the API origin URL, accepting values with a trailing /api/v1."""
+    cleaned = base_url.rstrip("/")
+    suffix = "/api/v1"
+    if cleaned.endswith(suffix):
+        return cleaned[: -len(suffix)]
+    return cleaned
+
+
 def should_retry(response: httpx.Response | None, exc: Exception | None) -> bool:
     """True for transient upstream failures worth retrying."""
     if exc is not None:

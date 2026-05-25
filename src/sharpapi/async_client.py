@@ -15,6 +15,7 @@ from ._base import (
     AuthMethod,
     handle_errors,
     make_headers,
+    normalize_base_url,
     parse_rate_limit,
     parse_response,
     retry_delay,
@@ -89,7 +90,7 @@ class AsyncSharpAPI:
 
         self._api_key = api_key
         self._auth_method: AuthMethod = auth_method
-        self._base_url = base_url.rstrip("/")
+        self._base_url = normalize_base_url(base_url)
         self._timeout = timeout
         self._http = httpx.AsyncClient(
             base_url=f"{self._base_url}/api/v1",

@@ -14,5 +14,4 @@ build/
 htmlcov/
 .claude/
 .DS_Store
-tests/
 .benchmarks/
