@@ -2,6 +2,19 @@
 
 All notable changes to the `sharpapi` Python SDK are documented here.
 
+## 0.4.0 — 2026-05-31
+
+### Added
+
+- `OddsLine.is_active` (bool, default `True`). `False` indicates the market is
+  suspended/closed with the price frozen — mirrors OpticOdds `locked-odds` but
+  as a queryable field. Absent on the wire is treated as `True`.
+
+### Backward compatibility
+
+- Additive optional field with a `True` default — existing code is unaffected,
+  and older API servers that omit the key parse as active.
+
 ## 0.3.2 — 2026-05-07
 
 ### Changed
