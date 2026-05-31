@@ -221,6 +221,10 @@ class OddsLine(BaseModel):
     event_start_time: str | None = None
     timestamp: str | None = None
     is_live: bool = False
+    # True (default) = market open and bettable; False = market suspended/closed
+    # with the price frozen (mirrors OpticOdds locked-odds). Absent on the wire
+    # is treated as True. SHA-3803.
+    is_active: bool = True
     deep_link: str | None = None
     player_name: str | None = None
     stat_category: str | None = None
