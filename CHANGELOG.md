@@ -2,7 +2,7 @@
 
 All notable changes to the `sharpapi` Python SDK are documented here.
 
-## 0.5.0 — 2026-06-02
+## 0.4.0 — 2026-06-02
 
 ### Changed
 
@@ -12,8 +12,6 @@ All notable changes to the `sharpapi` Python SDK are documented here.
   populates this field (previously always `null`). The removed
   `odds_changed_at` / `last_seen_at` / `wire_received_at` were never modeled by
   this SDK, so no model change is needed. (SHA-1048)
-
-## 0.4.0 — 2026-05-31
 
 ### Added
 
