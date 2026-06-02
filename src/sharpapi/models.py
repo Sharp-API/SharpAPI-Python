@@ -219,6 +219,9 @@ class OddsLine(BaseModel):
     probability: float
     line: float | None = None
     event_start_time: str | None = None
+    # ISO 8601 — when SharpAPI last refreshed this odd through its pipeline
+    # (advances every ingest cycle). A feed-freshness / delivery signal matching
+    # OpticOdds' `timestamp`; NOT a price-last-changed time. (SHA-1048)
     timestamp: str | None = None
     is_live: bool = False
     # True (default) = market open and bettable; False = market suspended/closed
@@ -315,6 +318,8 @@ class ArbitrageLeg(BaseModel):
     odds_decimal: float
     implied_probability: float | None = None
     stake_percent: float
+    # ISO 8601 last-refreshed (feed-freshness) timestamp for this leg's odd —
+    # see OddsLine.timestamp. (SHA-1048)
     timestamp: str | None = None
     external_event_id: str | None = None
     selection_id: str | None = None
