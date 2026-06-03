@@ -214,6 +214,12 @@ class OddsLine(BaseModel):
     market_type: str
     selection: str
     selection_type: str | None = None
+    # Structured side/segment axes (issue #76 / #689). team_side is the raw
+    # "home"|"away"|"draw" decomposed out of the compound selection_type vocab;
+    # market_segment is the contest slice ("full_game", "1st_half", ...). Both
+    # optional + additive — absent on rows the adapter didn't stamp.
+    team_side: str | None = None
+    market_segment: str | None = None
     odds_american: int | float
     odds_decimal: float
     probability: float
@@ -293,6 +299,9 @@ class EVOpportunity(BaseModel):
     detected_at: str | None = None
     external_event_id: str | None = None
     selection_id: str | None = None
+    # Structured side/segment axes (issue #76 / #689), additive + optional.
+    team_side: str | None = None
+    market_segment: str | None = None
     # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
@@ -572,6 +581,9 @@ class ClosingOddsLine(BaseModel):
     market_type: str
     selection: str
     selection_type: str | None = None
+    # Structured side/segment axes (issue #76 / #689), additive + optional.
+    team_side: str | None = None
+    market_segment: str | None = None
     odds_american: int | float
     odds_decimal: float
     line: float | None = None
