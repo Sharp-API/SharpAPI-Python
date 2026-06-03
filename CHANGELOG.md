@@ -2,6 +2,19 @@
 
 All notable changes to the `sharpapi` Python SDK are documented here.
 
+## 0.4.1 — 2026-06-02
+
+### Added — structured `team_side` + `market_segment` (issue #76 / #689)
+
+- `OddsLine`, `EVOpportunity`, and `ClosingOddsLine` gain two optional fields:
+  - `team_side` — the raw structured side (`"home"` | `"away"` | `"draw"`)
+    decomposed out of the compound `selection_type` vocabulary. Prefer this over
+    parsing compound prefixes like `"home_over"`.
+  - `market_segment` — the canonical contest slice (`"full_game"`, `"1st_half"`,
+    `"1st_5_innings"`, ...).
+- Both are additive and default to `None`; existing code is unaffected. The API
+  continues to emit the compound `selection_type` for back-compat.
+
 ## 0.4.0 — 2026-06-02
 
 ### Changed
