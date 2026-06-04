@@ -302,6 +302,12 @@ class EVOpportunity(BaseModel):
     # Structured side/segment axes (issue #76 / #689), additive + optional.
     team_side: str | None = None
     market_segment: str | None = None
+    # Suspended-state (server flag EV_SUSPENDED_STATE), additive + optional. While the sharp
+    # reference is momentarily suspended the opp stays visible with is_suspended=True and the
+    # edge hidden (ev_percentage is 0 / unknown — never a stale edge); suspended_since is the
+    # unix-seconds timestamp the suspension began. Absent unless the server flag is enabled.
+    is_suspended: bool = False
+    suspended_since: float | None = None
     # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
     away: TeamRef | None = None
