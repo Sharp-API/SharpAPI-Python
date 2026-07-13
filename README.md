@@ -1,8 +1,13 @@
 # SharpAPI Python SDK
 
+[![PyPI](https://img.shields.io/pypi/v/sharpapi?color=06b6d4)](https://pypi.org/project/sharpapi/)
+[![python](https://img.shields.io/pypi/pyversions/sharpapi?color=06b6d4)](https://pypi.org/project/sharpapi/)
+[![license](https://img.shields.io/badge/license-MIT-06b6d4)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-docs.sharpapi.io-06b6d4)](https://docs.sharpapi.io)
+
 Official Python client for the [SharpAPI](https://sharpapi.io) real-time sports betting odds API.
 
-Get pre-computed +EV opportunities, arbitrage detection, middles, and live odds from 20+ sportsbooks — with Pinnacle as the sharp reference.
+Get pre-computed +EV opportunities, arbitrage detection, middles, and live odds from 45+ sportsbooks, with Pinnacle as the sharp reference.
 
 ## Install
 
@@ -20,7 +25,7 @@ client = SharpAPI("sk_live_xxx")
 # --- Arbitrage opportunities ---
 arbs = client.arbitrage.get(min_profit=1.0, league="nba")
 for arb in arbs.data:
-    print(f"{arb.profit_percent:.2f}% profit — {arb.event_name}")
+    print(f"{arb.profit_percent:.2f}% profit: {arb.event_name}")
     for leg in arb.legs:
         print(f"  {leg.sportsbook}: {leg.selection} @ {leg.odds_american} ({leg.stake_percent:.1f}%)")
 
@@ -52,7 +57,7 @@ def on_ev(data):
 @stream.on("arb:detected")
 def on_arb(data):
     for arb in data:
-        print(f"Arb: {arb['profit_percent']}% — {arb['event_name']}")
+        print(f"Arb: {arb['profit_percent']}%: {arb['event_name']}")
 
 stream.connect()  # Blocks, processing events
 ```
@@ -105,10 +110,10 @@ Every opportunity response includes staleness metadata to avoid acting on stale 
 arbs = client.arbitrage.get()
 for arb in arbs.data:
     if arb.possibly_stale:
-        print(f"  Skipping — odds may be stale ({arb.oldest_odds_age_seconds}s old)")
+        print(f"  Skipping: odds may be stale ({arb.oldest_odds_age_seconds}s old)")
         continue
     if "LIVE_HIGH_PROFIT_SUSPICIOUS" in arb.warnings:
-        print(f"  Skipping — likely phantom arb")
+        print(f"  Skipping: likely phantom arb")
         continue
     print(f"Actionable: {arb.profit_percent}%")
 ```
@@ -142,7 +147,7 @@ except AuthenticationError:
 except TierRestrictedError as e:
     print(f"Upgrade to {e.required_tier} tier for this feature")
 except RateLimitedError as e:
-    print(f"Rate limited — retry after {e.retry_after}s")
+    print(f"Rate limited: retry after {e.retry_after}s")
 ```
 
 ## Odds Conversion Utilities
