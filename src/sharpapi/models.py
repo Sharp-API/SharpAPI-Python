@@ -274,7 +274,13 @@ class EVOpportunity(BaseModel):
     kelly_percent: float | None = Field(
         None, validation_alias=AliasChoices("kelly_percent", "kelly_fraction")
     )
-    confidence_score: float | None = None
+    # The wire field is `confidence` (int 0-100). Aliased rather than renamed so
+    # the public attribute name is unchanged — before this, `confidence_score`
+    # silently read None on every row (#18).
+    confidence_score: float | None = Field(
+        None, validation_alias=AliasChoices("confidence", "confidence_score")
+    )
+    quality_tier: str | None = None
     book_count: int | None = None
     market_width: float | None = None
     devig_method: str | None = None
@@ -383,14 +389,27 @@ class ArbitrageOpportunity(BaseModel):
 
 
 class MiddleSide(BaseModel):
-    """One side of a middle opportunity."""
+    """One side of a middle opportunity.
+
+    Odds are **flat** on the wire — ``odds_american`` / ``odds_decimal`` /
+    ``odds_probability`` — the same shape ``EVOpportunity`` uses, not a nested
+    ``OddsValue``. This previously declared a required ``odds: OddsValue``, which
+    is absent from every real payload, so ``client.middles()`` raised
+    ``ValidationError`` on any response carrying a side (#18).
+    """
 
     book: str
     selection: str
     line: float
-    odds: OddsValue
+    odds_american: int | float
+    odds_decimal: float
+    odds_probability: float | None = None
+    fair_probability: float | None = None
     stake_percent: float | None = None
     odds_age_seconds: float | None = None
+    external_event_id: str | None = None
+    market_id: str | None = None
+    selection_id: str | None = None
     deep_link: str | None = None
 
 
