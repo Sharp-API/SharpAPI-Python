@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[pandas]"
+          pip install -e ".[pandas,test]"
           pip install ruff pyright
 
       - name: Ruff check
@@ -30,3 +30,11 @@ jobs:
 
       - name: Pyright
         run: pyright
+
+      # This workflow is named "Tests" but never ran any until now — `tests/` has
+      # existed since 0.3.x and CI only linted and type-checked it. #18 shipped two
+      # model/wire mismatches that a single parse of a real payload would have
+      # caught, so the fixture round-trip it asks for is only worth adding if it can
+      # actually fail the build.
+      - name: Pytest
+        run: pytest -q
