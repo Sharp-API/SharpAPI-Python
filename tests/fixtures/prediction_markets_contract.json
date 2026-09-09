@@ -1,0 +1,82 @@
+{
+  "data": [
+    {
+      "market_id": "kalshi:KXEXAMPLEGAME-26SEP09",
+      "sportsbook": "kalshi",
+      "sportsbook_ref": { "id": "kalshi", "label": "Kalshi" },
+      "question": "Will the home side win?",
+      "category": "sports",
+      "sport": "baseball",
+      "league": "mlb",
+      "sport_ref": { "id": "baseball", "name": "Baseball" },
+      "league_ref": { "id": "mlb", "label": "MLB" },
+      "linked_event_id": "baseball_mlb_example_event",
+      "pm_event_id": "KXEXAMPLEGAME",
+      "outcomes": [
+        {
+          "selection_id": "yes",
+          "label": "Yes",
+          "price": { "probability": 0.55, "american": -122, "decimal": 1.818 },
+          "bid": 0.54,
+          "ask": 0.56,
+          "last": 0.55
+        },
+        {
+          "selection_id": "no",
+          "label": "No",
+          "price": { "probability": 0.45, "american": 122, "decimal": 2.222 },
+          "bid": null,
+          "ask": null,
+          "last": null
+        }
+      ],
+      "volume": 125000.0,
+      "volume_24h": 4200.0,
+      "open_interest": 31000.0,
+      "source_ids": {
+        "market_id": "KXEXAMPLEGAME-26SEP09",
+        "event_id": "KXEXAMPLEGAME",
+        "tick_size": 0.01,
+        "min_order_size": 1.0
+      },
+      "is_live": false,
+      "event_start_time": "2026-09-09T23:05:00Z",
+      "timestamp": "2026-09-09T18:00:00Z"
+    },
+    {
+      "market_id": "polymarket:pm_0xexample",
+      "sportsbook": "polymarket",
+      "question": "Will an example outcome happen this season?",
+      "category": "futures",
+      "sport": "baseball",
+      "league": "mlb",
+      "linked_event_id": null,
+      "outcomes": [
+        {
+          "label": "Yes",
+          "price": { "probability": 0.12, "american": 733, "decimal": 8.333 },
+          "token_id": "0xexampletoken",
+          "bid": null,
+          "ask": null,
+          "last": null
+        }
+      ],
+      "source_ids": {
+        "market_id": "pm_0xexample",
+        "condition_id": "0xexamplecondition",
+        "neg_risk": false
+      },
+      "is_live": false,
+      "timestamp": "2026-09-09T18:00:00Z"
+    }
+  ],
+  "pagination": {
+    "limit": 50,
+    "offset": 0,
+    "count": 2,
+    "total": 2,
+    "has_more": false,
+    "next_offset": null
+  },
+  "updated_at": "2026-09-09T18:00:02Z"
+}

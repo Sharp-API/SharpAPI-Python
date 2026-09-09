@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "id": "sports",
+      "label": "Sports",
+      "market_count": 412,
+      "books": [
+        { "id": "kalshi", "market_count": 260 },
+        { "id": "polymarket", "market_count": 152 }
+      ]
+    },
+    {
+      "id": "futures",
+      "label": "Futures",
+      "market_count": 88,
+      "books": [{ "id": "polymarket", "market_count": 88 }]
+    }
+  ],
+  "updated_at": "2026-09-09T18:00:02Z"
+}

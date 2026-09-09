@@ -90,6 +90,22 @@ client.sports.list()
 client.leagues.list(sport="basketball")
 client.sportsbooks.list()
 client.events.list(league="nba", live=True)
+client.players.list(sport="baseball", search="carroll")
+client.players.get("baseball_mlb_corbin_carroll")
+
+# Prediction markets
+client.prediction_markets.list(category="sports", sport="baseball")
+client.prediction_markets.categories()
+
+# Graded outcomes (one of hash_id / game_id is required)
+client.settlements.get(game_id="baseball_mlb_...")
+
+# Modeled parlay price — a SharpAPI model output under leg independence,
+# NOT a sportsbook parlay quote. `.parlay.price` is None if it can't be priced.
+client.parlay.price("draftkings", [
+    {"event_id": "abc123", "market_type": "moneyline", "selection": "Boston"},
+    {"event_id": "def456", "market_type": "total_points", "selection": "over", "line": 8.5},
+])
 
 # Account
 client.account.me()       # Tier, limits, features

@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "id": "baseball_mlb_example_player",
+      "display_name": "Example Player",
+      "first_name": "Example",
+      "last_name": "Player",
+      "sport": "baseball",
+      "leagues": ["mlb"],
+      "team_id": "baseball_mlb_example_team"
+    },
+    {
+      "id": "basketball_nba_second_player",
+      "display_name": "Second Player",
+      "sport": "basketball",
+      "leagues": []
+    }
+  ],
+  "pagination": {
+    "limit": 50,
+    "offset": 0,
+    "count": 2,
+    "total": 2,
+    "has_more": false,
+    "next_offset": null
+  }
+}

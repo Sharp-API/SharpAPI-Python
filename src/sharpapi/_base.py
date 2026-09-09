@@ -16,7 +16,7 @@ from .exceptions import (
     ValidationError,
     canonical_code,
 )
-from .models import APIResponse, RateLimitInfo, ResponseMeta
+from .models import APIResponse, RateLimitInfo, ResponseMeta, SettlementsPage
 
 DEFAULT_BASE_URL = "https://api.sharpapi.io"
 DEFAULT_TIMEOUT = 30.0
@@ -77,6 +77,26 @@ def parse_response(raw: dict, model_class: type) -> APIResponse:
         success=raw.get("success"),
         data=items,
         meta=meta,
+        timestamp=raw.get("timestamp"),
+        updated_at=raw.get("updated_at"),
+        tier=raw.get("tier"),
+    )
+
+
+
+def parse_settlements_response(raw: dict) -> APIResponse[SettlementsPage]:
+    """Parse a /settlements body.
+
+    Unlike every list surface, ``data`` here is an OBJECT (the rows plus the
+    paging state), so ``parse_response`` — which coerces ``data`` into a list
+    — cannot be reused. The window and freshness stamps ride in ``meta``.
+    """
+    page = SettlementsPage.model_validate(raw.get("data") or {})
+    meta_raw = raw.get("meta")
+    return APIResponse[SettlementsPage](
+        success=raw.get("success"),
+        data=page,
+        meta=ResponseMeta.model_validate(meta_raw) if meta_raw else None,
         timestamp=raw.get("timestamp"),
         updated_at=raw.get("updated_at"),
         tier=raw.get("tier"),

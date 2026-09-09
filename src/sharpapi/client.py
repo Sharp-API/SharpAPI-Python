@@ -19,6 +19,7 @@ from ._base import (
     normalize_base_url,
     parse_rate_limit,
     parse_response,
+    parse_settlements_response,
     retry_delay,
     should_retry,
 )
@@ -38,7 +39,12 @@ from .models import (
     Market,
     MiddleOpportunity,
     OddsLine,
+    ParlayPrice,
+    Player,
+    PredictionMarket,
+    PredictionMarketCategory,
     RateLimitInfo,
+    SettlementsPage,
     Sport,
     Sportsbook,
 )
@@ -119,6 +125,10 @@ class SharpAPI:
         self.leagues = _LeaguesResource(self)
         self.sportsbooks = _SportsbooksResource(self)
         self.events = _EventsResource(self)
+        self.players = _PlayersResource(self)
+        self.prediction_markets = _PredictionMarketsResource(self)
+        self.settlements = _SettlementsResource(self)
+        self.parlay = _ParlayResource(self)
         self.account = _AccountResource(self)
         self.keys = _KeysResource(self)
         self.stream = _StreamResource(self)
@@ -667,6 +677,188 @@ class _EventsResource:
         return _parse_response(data, Market)
 
 
+class _PlayersResource:
+    """The player catalog behind ``/players``."""
+
+    def __init__(self, client: SharpAPI):
+        self._client = client
+
+    def list(
+        self,
+        *,
+        sport: str | None = None,
+        league: str | None = None,
+        team_id: str | None = None,
+        search: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> APIResponse[list[Player]]:
+        """List players, optionally filtered by sport / league / team / name.
+
+        Args:
+            sport: Restrict to one sport, e.g. ``"baseball"``.
+            league: Restrict to one league, e.g. ``"mlb"``.
+            team_id: Restrict to one team.
+            search: Substring match over the player's display name.
+            limit: Rows per page (default 50, max 500 server-side).
+            offset: Row offset; too large a value raises ``ValidationError``.
+        """
+        data = self._client._get("/players", {
+            "sport": sport,
+            "league": league,
+            "team_id": team_id,
+            "search": search,
+            "limit": limit,
+            "offset": offset,
+        })
+        return _parse_response(data, Player)
+
+    def get(self, player_id: str) -> Player:
+        """Get one player by our canonical id, e.g. ``"baseball_mlb_..."``."""
+        data = self._client._get(f"/players/{quote(player_id, safe='')}")
+        raw = data.get("data", data)
+        return Player.model_validate(raw)
+
+
+class _PredictionMarketsResource:
+    """Prediction-market contracts behind ``/prediction-markets``."""
+
+    def __init__(self, client: SharpAPI):
+        self._client = client
+
+    def list(
+        self,
+        *,
+        category: str | None = None,
+        sport: str | None = None,
+        league: str | None = None,
+        event_id: str | None = None,
+        sportsbook: str | list[str] | None = None,
+        q: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> APIResponse[list[PredictionMarket]]:
+        """List prediction markets.
+
+        Args:
+            category: Restrict to one category id (see :meth:`categories`).
+            sport: Restrict to one sport.
+            league: Restrict to one league.
+            event_id: Restrict to markets linked to one canonical event id.
+            sportsbook: Restrict to one or more prediction-market books.
+            q: Substring match over the market question.
+            limit: Rows per page.
+            offset: Row offset.
+        """
+        data = self._client._get("/prediction-markets", {
+            "category": category,
+            "sport": sport,
+            "league": league,
+            "event_id": event_id,
+            "sportsbook": sportsbook,
+            "q": q,
+            "limit": limit,
+            "offset": offset,
+        })
+        return _parse_response(data, PredictionMarket)
+
+    def get(self, market_id: str) -> PredictionMarket:
+        """Get one market by our ``<book>:<native key>`` id."""
+        data = self._client._get(
+            f"/prediction-markets/{quote(market_id, safe='')}"
+        )
+        raw = data.get("data", data)
+        return PredictionMarket.model_validate(raw)
+
+    def categories(self) -> APIResponse[list[PredictionMarketCategory]]:
+        """List every prediction-market category with per-book market counts."""
+        data = self._client._get("/prediction-markets/categories")
+        return _parse_response(data, PredictionMarketCategory)
+
+
+class _SettlementsResource:
+    """Graded outcomes behind ``/settlements``."""
+
+    def __init__(self, client: SharpAPI):
+        self._client = client
+
+    def get(
+        self,
+        *,
+        hash_id: str | None = None,
+        game_id: str | None = None,
+        market_type: str | None = None,
+        selection: str | None = None,
+        player_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> APIResponse[SettlementsPage]:
+        """Look up how selections settled.
+
+        Exactly one of ``hash_id`` / ``game_id`` is required — the server
+        rejects an unkeyed query so every lookup stays indexed.
+
+        Args:
+            hash_id: A selection id as issued on ``/opportunities/ev``.
+            game_id: An event key as issued on ``/opportunities/ev``.
+            market_type: Narrow to one market type, e.g. ``"total_points"``.
+            selection: Narrow to one selection, e.g. ``"over"``.
+            player_id: Narrow to one player's prop rows.
+            limit: Rows per page (1..500, default 100).
+            offset: Row offset (0..2000).
+
+        Raises:
+            ValidationError: Neither ``hash_id`` nor ``game_id`` was given, or
+                a filter failed the server's format check.
+            SharpAPIError: ``service_unavailable`` when the grading store is
+                unreachable — this surface never answers a degraded read with
+                an empty page, because "no rows" is itself a real answer here.
+        """
+        data = self._client._get("/settlements", {
+            "hash_id": hash_id,
+            "game_id": game_id,
+            "market_type": market_type,
+            "selection": selection,
+            "player_id": player_id,
+            "limit": limit,
+            "offset": offset,
+        })
+        return parse_settlements_response(data)
+
+
+class _ParlayResource:
+    """Modeled parlay pricing behind ``/parlay/price``."""
+
+    def __init__(self, client: SharpAPI):
+        self._client = client
+
+    def price(self, sportsbook: str, legs: list[dict[str, Any]]) -> ParlayPrice:
+        """Price a parlay slip from one book's quoted single-leg prices.
+
+        The combined price is a SharpAPI model output under leg independence,
+        NOT a sportsbook parlay quote — ``result.parlay.note`` says so on
+        every response, and ``result.parlay.price`` is ``None`` whenever the
+        slip could not be priced.
+
+        Args:
+            sportsbook: The book whose single-leg quotes are read.
+            legs: Leg selectors. Each accepts ``event_id``, ``market_type``,
+                ``selection``, and optionally ``selection_type``, ``line``,
+                ``market_segment``, ``player_name``, ``player_id``.
+
+        Raises:
+            ValidationError: The slip was rejected — ``too_few_legs``,
+                ``too_many_legs``, ``unknown_leg`` (a leg matched no live
+                quote), ``ambiguous_leg`` (a leg matched more than one), or
+                ``correlation_unsupported`` (the legs are correlated).
+        """
+        data = self._client._post(
+            "/parlay/price", {"sportsbook": sportsbook, "legs": legs}
+        )
+        raw = data.get("data", data)
+        return ParlayPrice.model_validate(raw)
+
+
 class _AccountResource:
     def __init__(self, client: SharpAPI):
         self._client = client
@@ -838,3 +1030,4 @@ class _StreamResource:
 
 
 _parse_response = parse_response
+
