@@ -70,6 +70,12 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Test the tree pytest is invoked from. Without this, a machine that has
+# `sharpapi` installed from ANOTHER checkout (a git worktree, a second
+# clone) silently runs the suite against that copy: imports resolve to the
+# installed package, so a change here can pass a suite that never saw it.
+# CI already gets this via `pip install -e .` in the checked-out tree.
+pythonpath = ["src"]
 
 [tool.pyright]
 pythonVersion = "3.10"

@@ -4,6 +4,29 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 
 ## 0.4.3 — Unreleased
 
+### Added — typed surfaces for /players, /prediction-markets, /settlements and /parlay/price
+
+- Four new resources, sync and async: `client.players` (catalog list + by-id),
+  `client.prediction_markets` (list, by-id, `categories()`),
+  `client.settlements` (graded outcomes by `hash_id`/`game_id`) and
+  `client.parlay.price(sportsbook, legs)` (modeled combined price).
+- Models for each: `Player`, `PredictionMarket` (+ `PredictionMarketOutcome`,
+  `PredictionMarketPrice`, `PredictionMarketSourceIDs`,
+  `PredictionMarketCategory`, `PredictionMarketCategoryBook`), `Settlement`,
+  `SettlementsPage`, and `ParlayPrice` (+ `ParlayLeg`, `ParlayModel`,
+  `ParlayModelPrice`). All exported from the package root.
+- `ResponseMeta` gains `limit`, `offset`, `updated_at` and `grading_cutoff` —
+  `/settlements` reports its paging window and freshness in `meta`, and
+  undeclared keys were being dropped silently.
+
+### Added — parlay error codes
+
+- Five codes the parlay endpoint emits are now in the canonical registry and
+  map to `ValidationError`: `correlation_unsupported`, `too_few_legs`,
+  `too_many_legs`, `unknown_leg`, `ambiguous_leg`. (`service_unavailable`,
+  which `/settlements` returns on a degraded grading store, was already
+  registered and is unchanged.)
+
 ### Security
 
 - SSE authentication now stays in headers, including bearer mode, keeping API keys out of request URLs, HTTP logs, and exception traces. Stream filters and event identifiers are URL-encoded.

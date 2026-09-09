@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -18,6 +19,7 @@ from ._base import (
     normalize_base_url,
     parse_rate_limit,
     parse_response,
+    parse_settlements_response,
     retry_delay,
     should_retry,
 )
@@ -37,7 +39,12 @@ from .models import (
     Market,
     MiddleOpportunity,
     OddsLine,
+    ParlayPrice,
+    Player,
+    PredictionMarket,
+    PredictionMarketCategory,
     RateLimitInfo,
+    SettlementsPage,
     Sport,
     Sportsbook,
 )
@@ -111,6 +118,10 @@ class AsyncSharpAPI:
         self.leagues = _AsyncLeaguesResource(self)
         self.sportsbooks = _AsyncSportsbooksResource(self)
         self.events = _AsyncEventsResource(self)
+        self.players = _AsyncPlayersResource(self)
+        self.prediction_markets = _AsyncPredictionMarketsResource(self)
+        self.settlements = _AsyncSettlementsResource(self)
+        self.parlay = _AsyncParlayResource(self)
         self.account = _AsyncAccountResource(self)
         self.keys = _AsyncKeysResource(self)
 
@@ -546,6 +557,142 @@ class _AsyncEventsResource:
         """List the markets available on a specific event."""
         data = await self._client._get(f"/events/{event_id}/markets")
         return parse_response(data, Market)
+
+
+class _AsyncPlayersResource:
+    """The player catalog behind ``/players``."""
+
+    def __init__(self, client: AsyncSharpAPI):
+        self._client = client
+
+    async def list(
+        self,
+        *,
+        sport: str | None = None,
+        league: str | None = None,
+        team_id: str | None = None,
+        search: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> APIResponse[list[Player]]:
+        """List players, optionally filtered by sport / league / team / name."""
+        data = await self._client._get("/players", {
+            "sport": sport,
+            "league": league,
+            "team_id": team_id,
+            "search": search,
+            "limit": limit,
+            "offset": offset,
+        })
+        return parse_response(data, Player)
+
+    async def get(self, player_id: str) -> Player:
+        """Get one player by our canonical id."""
+        data = await self._client._get(f"/players/{quote(player_id, safe='')}")
+        raw = data.get("data", data)
+        return Player.model_validate(raw)
+
+
+class _AsyncPredictionMarketsResource:
+    """Prediction-market contracts behind ``/prediction-markets``."""
+
+    def __init__(self, client: AsyncSharpAPI):
+        self._client = client
+
+    async def list(
+        self,
+        *,
+        category: str | None = None,
+        sport: str | None = None,
+        league: str | None = None,
+        event_id: str | None = None,
+        sportsbook: str | list[str] | None = None,
+        q: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> APIResponse[list[PredictionMarket]]:
+        """List prediction markets."""
+        data = await self._client._get("/prediction-markets", {
+            "category": category,
+            "sport": sport,
+            "league": league,
+            "event_id": event_id,
+            "sportsbook": sportsbook,
+            "q": q,
+            "limit": limit,
+            "offset": offset,
+        })
+        return parse_response(data, PredictionMarket)
+
+    async def get(self, market_id: str) -> PredictionMarket:
+        """Get one market by our ``<book>:<native key>`` id."""
+        data = await self._client._get(
+            f"/prediction-markets/{quote(market_id, safe='')}"
+        )
+        raw = data.get("data", data)
+        return PredictionMarket.model_validate(raw)
+
+    async def categories(self) -> APIResponse[list[PredictionMarketCategory]]:
+        """List every prediction-market category with per-book market counts."""
+        data = await self._client._get("/prediction-markets/categories")
+        return parse_response(data, PredictionMarketCategory)
+
+
+class _AsyncSettlementsResource:
+    """Graded outcomes behind ``/settlements``."""
+
+    def __init__(self, client: AsyncSharpAPI):
+        self._client = client
+
+    async def get(
+        self,
+        *,
+        hash_id: str | None = None,
+        game_id: str | None = None,
+        market_type: str | None = None,
+        selection: str | None = None,
+        player_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> APIResponse[SettlementsPage]:
+        """Look up how selections settled.
+
+        Exactly one of ``hash_id`` / ``game_id`` is required — the server
+        rejects an unkeyed query so every lookup stays indexed. A degraded
+        grading store answers ``service_unavailable``, never an empty page.
+        """
+        data = await self._client._get("/settlements", {
+            "hash_id": hash_id,
+            "game_id": game_id,
+            "market_type": market_type,
+            "selection": selection,
+            "player_id": player_id,
+            "limit": limit,
+            "offset": offset,
+        })
+        return parse_settlements_response(data)
+
+
+class _AsyncParlayResource:
+    """Modeled parlay pricing behind ``/parlay/price``."""
+
+    def __init__(self, client: AsyncSharpAPI):
+        self._client = client
+
+    async def price(
+        self, sportsbook: str, legs: list[dict[str, Any]]
+    ) -> ParlayPrice:
+        """Price a parlay slip from one book's quoted single-leg prices.
+
+        The combined price is a SharpAPI model output under leg independence,
+        NOT a sportsbook parlay quote — ``result.parlay.price`` is ``None``
+        whenever the slip could not be priced.
+        """
+        data = await self._client._post(
+            "/parlay/price", {"sportsbook": sportsbook, "legs": legs}
+        )
+        raw = data.get("data", data)
+        return ParlayPrice.model_validate(raw)
 
 
 class _AsyncAccountResource:

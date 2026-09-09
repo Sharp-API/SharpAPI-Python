@@ -1,0 +1,67 @@
+{
+  "data": {
+    "sportsbook": "example_book",
+    "legs": [
+      {
+        "index": 0,
+        "event_id": "baseball_mlb_example_event",
+        "sportsbook": "example_book",
+        "market_type": "moneyline",
+        "selection": "Example Home",
+        "selection_type": "home",
+        "line": null,
+        "odds_american": -140,
+        "odds_decimal": 1.714,
+        "implied_probability": 0.5833,
+        "is_live": false,
+        "is_active": true,
+        "timestamp": "2026-09-09T18:00:00Z"
+      },
+      {
+        "index": 1,
+        "event_id": "baseball_mlb_other_event",
+        "sportsbook": "example_book",
+        "market_type": "total_points",
+        "market_segment": "full_game",
+        "selection": "over",
+        "selection_type": "over",
+        "line": 8.5,
+        "odds_american": 105,
+        "odds_decimal": 2.05,
+        "implied_probability": 0.4878,
+        "is_live": false,
+        "is_active": true,
+        "timestamp": "2026-09-09T18:00:00Z"
+      },
+      {
+        "index": 2,
+        "event_id": "baseball_mlb_example_event",
+        "sportsbook": "example_book",
+        "market_type": "player_strikeouts",
+        "market_segment": "full_game",
+        "selection": "over",
+        "selection_type": "over",
+        "line": 5.5,
+        "player_name": "Example Player",
+        "odds_american": -115,
+        "odds_decimal": 1.87,
+        "implied_probability": 0.5349,
+        "is_live": false,
+        "is_active": true,
+        "timestamp": "2026-09-09T18:00:00Z"
+      }
+    ],
+    "parlay": {
+      "source": "sharpapi_model",
+      "method": "independence_product",
+      "model_version": "1",
+      "leg_count": 3,
+      "price": {
+        "odds_american": 557,
+        "odds_decimal": 6.57,
+        "implied_probability": 0.1522
+      },
+      "note": "Combined price computed by SharpAPI under leg independence from the sportsbook's quoted single-leg prices. It is a model output, not a sportsbook parlay quote."
+    }
+  }
+}

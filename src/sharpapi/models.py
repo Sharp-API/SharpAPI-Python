@@ -104,6 +104,14 @@ class ResponseMeta(BaseModel):
     filters: dict[str, Any] | None = None
     summary: dict[str, Any] | None = None
     books_analyzed: int | None = None
+    # /settlements reports its paging window and freshness in meta rather
+    # than in a top-level pagination block. Declared so the values survive
+    # parsing instead of being silently dropped.
+    limit: int | None = None
+    offset: int | None = None
+    updated_at: str | None = None
+    #: Earliest servable grade date — grades before it are excluded by contract.
+    grading_cutoff: str | None = None
 
 
 class APIResponse(BaseModel, Generic[T]):
@@ -827,3 +835,254 @@ class RateLimitInfo(BaseModel):
     remaining: int | None = None
     reset: float | None = None
     tier: str | None = None
+
+
+# =============================================================================
+# Players
+# =============================================================================
+
+
+class Player(BaseModel):
+    """A row from the ``GET /players`` catalog.
+
+    The seven fields below are the whole v1 contract on this surface; the
+    server deliberately exposes no third-party identifiers here.
+    """
+
+    id: str
+    display_name: str
+    first_name: str | None = None
+    last_name: str | None = None
+    sport: str
+    # Empty for a player with no league attribution; the wire sends ``[]``,
+    # never ``null``.
+    leagues: list[str] = Field(default_factory=list)
+    team_id: str | None = None
+
+    model_config = {"extra": "allow"}
+
+
+# =============================================================================
+# Prediction Markets
+# =============================================================================
+
+
+class PredictionMarketPrice(BaseModel):
+    """A prediction-market outcome price in all three formats."""
+
+    probability: float
+    american: int
+    decimal: float
+
+    model_config = {"extra": "allow"}
+
+
+class PredictionMarketOutcome(BaseModel):
+    """One outcome (contract side) of a prediction market."""
+
+    label: str
+    price: PredictionMarketPrice
+    #: Exchange-native selection id, when the book publishes one.
+    selection_id: str | None = None
+    #: Polymarket CLOB token id, per outcome.
+    token_id: str | None = None
+    # bid/ask/last are sent WITHOUT omitempty — an outcome with no resting
+    # quote arrives as an explicit ``null``, not an absent key.
+    bid: float | None = None
+    ask: float | None = None
+    last: float | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class PredictionMarketSourceIDs(BaseModel):
+    """The exchange's own identifiers for a market, namespaced by book."""
+
+    market_id: str
+    event_id: str | None = None
+    condition_id: str | None = None
+    tick_size: float | None = None
+    neg_risk: bool | None = None
+    min_order_size: float | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class PredictionMarket(BaseModel):
+    """A market from ``GET /prediction-markets``."""
+
+    #: Ours: ``<book>:<native market key>``.
+    market_id: str
+    sportsbook: str
+    question: str
+    category: str
+    sport: str
+    league: str
+    outcomes: list[PredictionMarketOutcome] = Field(default_factory=list)
+    source_ids: PredictionMarketSourceIDs
+    is_live: bool = False
+    timestamp: str
+    # ``linked_event_id`` is sent WITHOUT omitempty and is ALWAYS null for
+    # futures / question contracts — only game-tied contracts carry the
+    # canonical sports event id that joins to /odds, /events and the EV
+    # surfaces.
+    linked_event_id: str | None = None
+    pm_event_id: str | None = None
+    volume: float | None = None
+    volume_24h: float | None = None
+    open_interest: float | None = None
+    event_start_time: str | None = None
+    # Optional structured refs, same shape as every other surface.
+    sportsbook_ref: EntityRef | None = None
+    sport_ref: SportRef | None = None
+    league_ref: EntityRef | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class PredictionMarketCategoryBook(BaseModel):
+    """One book's contribution to a prediction-market category count."""
+
+    id: str
+    market_count: int
+
+    model_config = {"extra": "allow"}
+
+
+class PredictionMarketCategory(BaseModel):
+    """A row from ``GET /prediction-markets/categories``."""
+
+    id: str
+    label: str
+    market_count: int
+    books: list[PredictionMarketCategoryBook] = Field(default_factory=list)
+
+    model_config = {"extra": "allow"}
+
+
+# =============================================================================
+# Settlements
+# =============================================================================
+
+
+class Settlement(BaseModel):
+    """A graded selection from ``GET /settlements``.
+
+    Field names mirror ``/opportunities/ev`` so a pick joins to its grade
+    without a translation table. This surface reports outcomes only — no
+    odds, EV%, stake math, or ROI.
+    """
+
+    game_id: str
+    sport: str
+    league: str
+    home_team: str
+    away_team: str
+    market_type: str
+    selection: str
+    selection_type: str
+    #: ``"won"``, ``"lost"``, or ``"push"`` (voids are reported as push).
+    outcome: str
+    #: RFC3339 UTC. Never earlier than the server's grading cutoff.
+    graded_at: str
+    # Present only on a hash_id lookup: an event listing collapses per-book
+    # capture rows into one row per selection, which no single hash describes.
+    hash_id: str | None = None
+    line: float | None = None
+    player_name: str | None = None
+    player_id: str | None = None
+    stat_category: str | None = None
+    event_start_time: str | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class SettlementsPage(BaseModel):
+    """The ``data`` object of a ``GET /settlements`` response.
+
+    Unlike the list surfaces, ``data`` here is an object: paging state rides
+    beside the rows. ``next_offset`` advances by rows EXAMINED, not rows
+    returned, so walking it never ends a caller's page early.
+    """
+
+    settlements: list[Settlement] = Field(default_factory=list)
+    total_settlements: int = 0
+    truncated: bool = False
+    next_offset: int | None = None
+
+    model_config = {"extra": "allow"}
+
+
+# =============================================================================
+# Parlay
+# =============================================================================
+
+
+class ParlayLeg(BaseModel):
+    """One resolved leg echoed back by ``POST /parlay/price``.
+
+    The odds are the sportsbook's own quoted single-leg price.
+    """
+
+    index: int
+    event_id: str
+    sportsbook: str
+    market_type: str
+    selection: str
+    odds_american: int
+    odds_decimal: float
+    implied_probability: float
+    is_live: bool = False
+    is_active: bool = False
+    timestamp: str
+    market_segment: str | None = None
+    selection_type: str | None = None
+    # Sent WITHOUT omitempty: a moneyline leg arrives as explicit ``null``.
+    line: float | None = None
+    player_name: str | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class ParlayModelPrice(BaseModel):
+    """The modeled combined price. Not a sportsbook parlay quote."""
+
+    odds_american: int
+    odds_decimal: float
+    implied_probability: float
+
+    model_config = {"extra": "allow"}
+
+
+class ParlayModel(BaseModel):
+    """The ``parlay`` block of a ``POST /parlay/price`` response.
+
+    ``price`` is ``None`` whenever the slip could not be priced — read
+    ``reason`` (and ``conflicting_legs``, for a mutually-exclusive slip) to
+    see why. ``note`` always rides along and states that the combined price
+    is a SharpAPI model output, never a book's parlay quote.
+    """
+
+    source: str
+    method: str
+    model_version: str
+    leg_count: int
+    note: str
+    # Sent WITHOUT omitempty: an unpriceable slip arrives as explicit ``null``.
+    price: ParlayModelPrice | None = None
+    reason: str | None = None
+    #: Index pairs of legs that cannot co-occur, on a rejected slip.
+    conflicting_legs: list[list[int]] | None = None
+
+    model_config = {"extra": "allow"}
+
+
+class ParlayPrice(BaseModel):
+    """The ``data`` object of a ``POST /parlay/price`` response."""
+
+    sportsbook: str
+    legs: list[ParlayLeg] = Field(default_factory=list)
+    parlay: ParlayModel
+    warnings: list[str] | None = None
+
+    model_config = {"extra": "allow"}

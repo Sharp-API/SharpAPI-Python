@@ -1,0 +1,54 @@
+{
+  "success": true,
+  "data": {
+    "settlements": [
+      {
+        "hash_id": "a1b2c3d4e5f60718",
+        "game_id": "baseball_mlb_example_event",
+        "sport": "baseball",
+        "league": "mlb",
+        "home_team": "Example Home",
+        "away_team": "Example Away",
+        "market_type": "total_points",
+        "selection": "over",
+        "selection_type": "over",
+        "line": 8.5,
+        "outcome": "won",
+        "graded_at": "2026-09-08T04:12:33Z",
+        "event_start_time": "2026-09-07T23:05:00Z"
+      },
+      {
+        "game_id": "baseball_mlb_example_event",
+        "sport": "baseball",
+        "league": "mlb",
+        "home_team": "Example Home",
+        "away_team": "Example Away",
+        "market_type": "player_strikeouts",
+        "selection": "under",
+        "selection_type": "under",
+        "player_name": "Example Player",
+        "player_id": "baseball_mlb_example_player",
+        "stat_category": "strikeouts",
+        "outcome": "push",
+        "graded_at": "2026-09-08T04:12:33Z"
+      }
+    ],
+    "total_settlements": 2,
+    "truncated": false,
+    "next_offset": null
+  },
+  "meta": {
+    "source": "ev_grading",
+    "filters": {
+      "hash_id": null,
+      "game_id": "baseball_mlb_example_event",
+      "market_type": null,
+      "selection": null,
+      "player_id": null
+    },
+    "limit": 100,
+    "offset": 0,
+    "grading_cutoff": "2026-07-19",
+    "updated_at": "2026-09-09T18:00:00.123456789Z"
+  }
+}

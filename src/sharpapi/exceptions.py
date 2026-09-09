@@ -71,8 +71,10 @@ class StreamError(SharpAPIError):
 # =============================================================================
 
 # HTTP error codes — emitted via REST handlers (httputil.WriteJSONError).
+AMBIGUOUS_LEG = "ambiguous_leg"
 BACKPRESSURE = "backpressure"
 CONCURRENT_REQUEST_CAP = "concurrent_request_cap"
+CORRELATION_UNSUPPORTED = "correlation_unsupported"
 DISABLED_API_KEY = "disabled_api_key"
 EXPIRED_API_KEY = "expired_api_key"
 GONE = "gone"
@@ -87,9 +89,12 @@ OFFSET_TOO_LARGE = "offset_too_large"
 RATE_LIMITED = "rate_limited"
 SERVICE_UNAVAILABLE = "service_unavailable"
 TIER_RESTRICTED = "tier_restricted"
+TOO_FEW_LEGS = "too_few_legs"
+TOO_MANY_LEGS = "too_many_legs"
 TOO_MANY_STREAMS = "too_many_streams"
 UNAUTHORIZED = "unauthorized"
 UNKNOWN_ENDPOINT = "unknown_endpoint"
+UNKNOWN_LEG = "unknown_leg"
 UPSTREAM_ERROR = "upstream_error"
 VALIDATION_ERROR = "validation_error"
 
@@ -104,8 +109,16 @@ WS_UNKNOWN_MESSAGE_TYPE = "unknown_message_type"
 #: Human-readable descriptions for every canonical code.
 ERROR_CODE_DESCRIPTIONS: dict[str, str] = {
     # HTTP
+    AMBIGUOUS_LEG: (
+        "A parlay leg matched more than one quote on the requested book; "
+        "narrow it with line / selection_type / market_segment."
+    ),
     BACKPRESSURE: "Server is shedding load; retry shortly.",
     CONCURRENT_REQUEST_CAP: "Too many in-flight requests for this API key.",
+    CORRELATION_UNSUPPORTED: (
+        "The requested parlay legs are correlated (same event); the independence "
+        "model cannot price them, so no combined price is returned."
+    ),
     DISABLED_API_KEY: "API key has been disabled.",
     EXPIRED_API_KEY: "API key has expired.",
     GONE: "Resource is no longer available.",
@@ -123,9 +136,12 @@ ERROR_CODE_DESCRIPTIONS: dict[str, str] = {
     RATE_LIMITED: "Rate limit exceeded; see Retry-After header.",
     SERVICE_UNAVAILABLE: "Service is temporarily unavailable.",
     TIER_RESTRICTED: "Current subscription tier does not include this feature.",
+    TOO_FEW_LEGS: "A parlay slip needs at least the per-endpoint minimum number of legs.",
+    TOO_MANY_LEGS: "A parlay slip exceeded the per-endpoint maximum number of legs.",
     TOO_MANY_STREAMS: "Maximum concurrent WebSocket/SSE streams exceeded.",
     UNAUTHORIZED: "Authentication required.",
     UNKNOWN_ENDPOINT: "Endpoint does not exist.",
+    UNKNOWN_LEG: "A parlay leg matched no live quote on the requested sportsbook.",
     UPSTREAM_ERROR: "Upstream data source error.",
     VALIDATION_ERROR: "Request parameters failed validation.",
     # WebSocket
@@ -156,6 +172,14 @@ ERROR_CODE_TO_EXCEPTION: dict[str, type[SharpAPIError]] = {
     # Validation
     VALIDATION_ERROR: ValidationError,
     OFFSET_TOO_LARGE: ValidationError,
+    # Parlay pricing rejections — every one is a 400 from
+    # POST /parlay/price, so they route to ValidationError like any other
+    # rejected request rather than to a bespoke exception class.
+    CORRELATION_UNSUPPORTED: ValidationError,
+    TOO_FEW_LEGS: ValidationError,
+    TOO_MANY_LEGS: ValidationError,
+    UNKNOWN_LEG: ValidationError,
+    AMBIGUOUS_LEG: ValidationError,
     # Streaming frames
     WS_ALREADY_AUTHENTICATED: StreamError,
     WS_INVALID_MESSAGE: StreamError,
