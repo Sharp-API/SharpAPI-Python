@@ -34,6 +34,7 @@ from sharpapi.models import (
     MiddleOpportunity,
     MiddleSide,
     OddsLine,
+    ResponseMeta,
     Sport,
     Sportsbook,
 )
@@ -263,3 +264,89 @@ def test_null_data_parses_as_empty_list():
     payload = _payload("events_empty_live.json")
     assert payload["data"] is None, "recapture: this fixture must carry a null data"
     assert parse_response(payload, Event).data == []
+
+
+# --------------------------------------------------------------------------- #
+# crew #24566 — ``meta.store`` was dropped on the floor
+#
+# ``ResponseMeta`` declared no ``store`` field and no ``extra`` policy, so
+# pydantic's default ``extra="ignore"`` discarded the whole block. Three
+# shipped server features were therefore invisible to this SDK:
+# go#2378 (``reason``: warming / store_empty / no_match), go#2397
+# (``event_status`` / ``completed_at``), and go#2632 (``books_without_rows``).
+#
+# The first two tests pin the block itself. The last two pin the *policy* —
+# the class-level bug is that any additive ``meta`` field is silently lost,
+# and go#2632 is the next one already queued up.
+#
+# ``StoreReadiness`` is imported inside the two tests that need it rather than
+# at module scope. Against a pre-fix build that name does not exist, and a
+# top-level import would collapse the whole module into one collection error
+# instead of the four plain test failures that demonstrate the coverage.
+# --------------------------------------------------------------------------- #
+
+
+def test_meta_store_survives_parsing():
+    """The headline: the whole block was discarded by ``model_validate``."""
+    payload = _payload("odds_empty_store_live.json")
+    wire = payload["meta"]["store"]
+    assert payload["data"] == [], "recapture: meta.store is only sent on an empty page"
+
+    store = parse_response(payload, OddsLine).meta.store
+
+    assert store is not None, "meta.store was dropped — the crew #24566 defect"
+    assert store.reason == wire["reason"] == "no_match"
+    assert store.generation == wire["generation"] == 1284
+    assert store.ready == wire["ready"] is True
+    assert store.books == wire["books"] == 42
+    assert store.rows == wire["rows"] == 1209324
+
+
+def test_meta_store_reads_ended_event_signal():
+    """go#2397: ``event_status`` tells a poller to stop. Synthetic payload.
+
+    The live capture above is a ``no_match`` page, which by contract omits
+    these two fields — they appear only when the request filtered on exactly
+    one ``event_id`` and that event has ended. Shape taken from
+    ``StoreReadiness`` in ``sharp-api-go/store_readiness.go``.
+    """
+    from sharpapi.models import StoreReadiness  # noqa: PLC0415
+
+    store = StoreReadiness.model_validate(
+        {
+            "generation": 1284,
+            "ready": True,
+            "books": 42,
+            "rows": 1209324,
+            "reason": "no_match",
+            "event_status": "final",
+            "completed_at": "2026-09-09T22:14:03Z",
+        }
+    )
+    assert store.event_status == "final"
+    assert store.completed_at == "2026-09-09T22:14:03Z"
+
+
+def test_response_meta_keeps_fields_it_does_not_declare():
+    """The class-level bug, stated generally: additive ``meta`` keys survive."""
+    meta = ResponseMeta.model_validate({"count": 0, "some_future_block": {"a": 1}})
+
+    assert meta.count == 0
+    assert meta.model_extra == {"some_future_block": {"a": 1}}
+
+
+def test_store_readiness_keeps_fields_it_does_not_declare():
+    """go#2632's ``books_without_rows`` reaches callers before it is typed.
+
+    That field is still an open PR on the server, so its name and shape can
+    change in review and this SDK does not declare it. It must not be lost in
+    the meantime — which is the whole point of the ``extra`` policy.
+    """
+    from sharpapi.models import StoreReadiness  # noqa: PLC0415
+
+    store = StoreReadiness.model_validate(
+        {"reason": "store_empty", "books_without_rows": ["pinnacle", "fanduel"]}
+    )
+
+    assert store.reason == "store_empty"
+    assert store.model_extra == {"books_without_rows": ["pinnacle", "fanduel"]}

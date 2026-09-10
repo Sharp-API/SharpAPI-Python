@@ -70,6 +70,10 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Import the package from this tree. Without it pytest resolves `sharpapi`
+# through whatever editable install is on the path, so a run inside a git
+# worktree silently tests a different checkout than the one being changed.
+pythonpath = ["src"]
 
 [tool.pyright]
 pythonVersion = "3.10"
