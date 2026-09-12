@@ -292,7 +292,9 @@ def test_meta_store_survives_parsing():
     wire = payload["meta"]["store"]
     assert payload["data"] == [], "recapture: meta.store is only sent on an empty page"
 
-    store = parse_response(payload, OddsLine).meta.store
+    meta = parse_response(payload, OddsLine).meta
+    assert meta is not None, "recapture: the fixture carries a meta block"
+    store = meta.store
 
     assert store is not None, "meta.store was dropped — the crew #24566 defect"
     assert store.reason == wire["reason"] == "no_match"
