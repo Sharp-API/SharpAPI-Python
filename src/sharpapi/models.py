@@ -91,12 +91,57 @@ class Pagination(BaseModel):
     total: int | None = None
 
 
+class StoreReadiness(BaseModel):
+    """Why a page came back empty. Attached at ``meta.store``.
+
+    The server sends this block only when zero rows are returned, because
+    ``200`` plus an empty ``data`` list is otherwise indistinguishable between
+    "the backing store is mid-swap, retry" and "your filter matched nothing".
+
+    ``reason`` is the field to branch on. It is deliberately typed ``str``
+    rather than a closed set, so a value the server adds later does not turn
+    every empty page into a ``ValidationError``. Values today:
+
+    - ``warming`` — no refresh cycle has completed yet. Retry.
+    - ``store_empty`` — ready, but the instance holds no rows. Retry.
+    - ``no_match`` — ready and populated; the query genuinely matched
+      nothing. Authoritative, retrying will not help.
+
+    ``event_status`` and ``completed_at`` appear only when the request
+    filtered on exactly one ``event_id`` and that event has ended
+    (``final``, with the time completion was detected) or has been evicted
+    (``gone``). They are the signal to stop polling.
+
+    Mirrors ``StoreReadiness`` in the API server. Every field is optional:
+    a diagnostic block must never be the thing that fails to parse.
+    """
+
+    generation: int | None = None
+    ready: bool | None = None
+    books: int | None = None
+    rows: int | None = None
+    reason: str | None = None
+    event_status: str | None = None
+    completed_at: str | None = None
+
+    model_config = {"extra": "allow"}
+
+
 class ResponseMeta(BaseModel):
     """Metadata returned with API responses."""
+
+    # The server extends ``meta`` additively. Pydantic defaults to
+    # ``extra="ignore"``, which silently discarded every block this class did
+    # not name — ``meta.store`` was dropped for its entire life (crew #24566).
+    # Allowing extras means the next additive field reaches callers via
+    # ``model_extra`` on the day it ships, before it is typed here.
+    model_config = {"extra": "allow"}
 
     count: int | None = None
     total: int | None = None
     pagination: Pagination | None = None
+    #: Empty-result attribution; sent only when ``data`` came back empty.
+    store: StoreReadiness | None = None
     updated: str | None = None
     source: str | None = None
     last_update: str | None = None

@@ -60,6 +60,7 @@ from .models import (
     Sport,
     SportRef,
     Sportsbook,
+    StoreReadiness,
     Team,
     TeamRef,
 )
@@ -101,6 +102,7 @@ __all__ = [
     "Sport",
     "SportRef",
     "Sportsbook",
+    "StoreReadiness",
     "Team",
     "TeamRef",
     # Streaming
