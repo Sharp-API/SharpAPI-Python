@@ -4,6 +4,14 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 
 ## 0.4.3 — Unreleased
 
+### Fixed
+
+- `odds.get()` and `odds.best()` (sync and async) now send the event filter under the
+  API's canonical `event_id` query key. They previously sent `event`, a deprecated alias
+  whose sunset date has passed, so every SDK call filtering by event came back with
+  `Deprecation`, `Sunset` and `Warning: 299` headers. The keyword argument is unchanged —
+  it is still `event=` — so no caller needs to change anything.
+
 ### Security
 
 - SSE authentication now stays in headers, including bearer mode, keeping API keys out of request URLs, HTTP logs, and exception traces. Stream filters and event identifiers are URL-encoded.

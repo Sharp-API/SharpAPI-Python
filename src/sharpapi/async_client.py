@@ -195,7 +195,10 @@ class _AsyncOddsResource:
             "sport": sport,
             "league": league,
             "market": market,
-            "event": event,
+            # Canonical server-side filter name. The ``event`` spelling is a
+            # deprecated alias (sunset 2026-07-01) and answers carry Deprecation
+            # headers; the SDK keyword argument stays ``event`` for compatibility.
+            "event_id": event,
             "live": live,
             "sort": sort,
             "group_by": group_by,
@@ -223,7 +226,10 @@ class _AsyncOddsResource:
             "sport": sport,
             "league": league,
             "market": market,
-            "event": event,
+            # Canonical server-side filter name. The ``event`` spelling is a
+            # deprecated alias (sunset 2026-07-01) and answers carry Deprecation
+            # headers; the SDK keyword argument stays ``event`` for compatibility.
+            "event_id": event,
             "live": live,
             "sportsbook": sportsbook,
             "add_sportsbook": add_sportsbook,
