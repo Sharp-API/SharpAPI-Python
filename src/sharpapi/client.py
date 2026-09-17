@@ -211,7 +211,7 @@ class _OddsResource:
             sport: Filter by sport(s).
             league: Filter by league(s).
             market: Filter by market type(s).
-            event: Filter by event ID(s).
+            event: Filter by event ID(s). Sent on the wire as ``event_id``.
             live: Filter by live status.
             sort: Sort field (prefix with - for descending).
             group_by: Group results (e.g. "event").
@@ -225,7 +225,10 @@ class _OddsResource:
             "sport": sport,
             "league": league,
             "market": market,
-            "event": event,
+            # Canonical server-side filter name. The ``event`` spelling is a
+            # deprecated alias (sunset 2026-07-01) and answers carry Deprecation
+            # headers; the SDK keyword argument stays ``event`` for compatibility.
+            "event_id": event,
             "live": live,
             "sort": sort,
             "group_by": group_by,
@@ -253,7 +256,10 @@ class _OddsResource:
             "sport": sport,
             "league": league,
             "market": market,
-            "event": event,
+            # Canonical server-side filter name. The ``event`` spelling is a
+            # deprecated alias (sunset 2026-07-01) and answers carry Deprecation
+            # headers; the SDK keyword argument stays ``event`` for compatibility.
+            "event_id": event,
             "live": live,
             "sportsbook": sportsbook,
             "add_sportsbook": add_sportsbook,

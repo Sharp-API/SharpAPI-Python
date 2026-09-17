@@ -4,10 +4,36 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 
 ## 0.4.3 — Unreleased
 
+### Fixed
+
+- `odds.get()` and `odds.best()` (sync and async) now send the event filter under the
+  API's canonical `event_id` query key. They previously sent `event`, a deprecated alias
+  whose sunset date has passed, so every SDK call filtering by event came back with
+  `Deprecation`, `Sunset` and `Warning: 299` headers. The keyword argument is unchanged —
+  it is still `event=` — so no caller needs to change anything.
+
 ### Security
 
 - SSE authentication now stays in headers, including bearer mode, keeping API keys out of request URLs, HTTP logs, and exception traces. Stream filters and event identifiers are URL-encoded.
 - Package publishing requires approval through the protected release environment.
+
+### Fixed — `meta.store` reached callers as nothing at all
+
+- `ResponseMeta` now declares `store`, typed as the new `StoreReadiness` model.
+  It was previously undeclared, and because the class did not allow extra
+  fields, pydantic discarded the whole block during parsing. Two shipped
+  server features were therefore invisible to this SDK: the `reason`
+  (`warming` / `store_empty` / `no_match`) that distinguishes "the backing
+  store is swapping, retry" from "your filter matched nothing", and the
+  `event_status` / `completed_at` pair that says an event has ended and
+  polling should stop. A third — the in-scope books currently holding zero
+  rows — is still in flight server-side; it will surface through
+  `model_extra` the day it ships, and can be typed here afterwards.
+- `ResponseMeta` and `StoreReadiness` now allow undeclared fields, reachable
+  via `model_extra`. `meta` is extended additively by the API, and the bug
+  above was the general case of that, not a one-off omission.
+- Purely additive. `store` is `None` on every non-empty page, which is every
+  response that carried rows before this change.
 
 ## 0.4.1 — 2026-06-02
 
