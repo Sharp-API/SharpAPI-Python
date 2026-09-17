@@ -199,6 +199,12 @@ class _OddsResource:
     ) -> APIResponse[list[OddsLine]]:
         """Get current odds snapshot.
 
+        Results are ordered by event_start_time ascending, so page 1 is the
+        earliest-starting events, not a sample of all books. A book whose
+        events start later in the day is legitimately absent from page 1 and
+        appears on a later page. Filter by sportsbook, league, or event_id to
+        get coverage instead of a time window.
+
         Args:
             sportsbook: Filter by sportsbook(s).
             add_sportsbook: Add sportsbook(s) beyond tier defaults.
