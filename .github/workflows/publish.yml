@@ -1,0 +1,73 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  # workflow_dispatch lets operators dry-run the test matrix + gate
+  # wiring without cutting a real release (the actual PyPI upload step
+  # is guarded against non-release triggers, see below). Useful for
+  # verifying the gate after edits to test.yml or publish.yml.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Mirrors test.yml on the tagged commit: lint + typecheck across the
+  # support matrix before publish. PyPI versions are immutable, so any
+  # gate we can apply pre-upload is cheaper than publishing a broken
+  # release. needs: gate below blocks publish on every matrix entry.
+  gate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[pandas,test]"
+          pip install ruff pyright
+
+      - name: Ruff check
+        run: ruff check
+
+      - name: Pyright
+        run: pyright
+
+      - name: Pytest
+        run: pytest -q
+
+  publish:
+    if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags/v')
+    needs: gate
+    environment: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install hatch
+
+      - name: Build
+        run: hatch build
+
+      - name: Publish to PyPI
+        # Only publish on an actual release event. workflow_dispatch
+        # runs the validation gate only; the protected job is skipped.
+        if: github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
