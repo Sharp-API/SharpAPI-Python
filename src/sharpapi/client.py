@@ -39,6 +39,7 @@ from .models import (
     MiddleOpportunity,
     OddsLine,
     RateLimitInfo,
+    SeasonType,
     Sport,
     Sportsbook,
 )
@@ -192,6 +193,7 @@ class _OddsResource:
         live: bool | None = None,
         sort: str | None = None,
         group_by: str | None = None,
+        season_type: SeasonType | None = None,
         limit: int | None = None,
         offset: int | None = None,
     ) -> APIResponse[list[OddsLine]]:
@@ -212,6 +214,7 @@ class _OddsResource:
             live: Filter by live status.
             sort: Sort field (prefix with - for descending).
             group_by: Group results (e.g. "event").
+            season_type: ``"Preseason"`` or ``"Regular Season"``.
             limit: Max results (1-500, default 50).
             offset: Pagination offset.
         """
@@ -230,6 +233,7 @@ class _OddsResource:
             "is_live": live,
             "sort": sort,
             "group_by": group_by,
+            "season_type": season_type,
             "limit": limit,
             "offset": offset,
         })
@@ -646,14 +650,21 @@ class _EventsResource:
         sport: str | None = None,
         league: str | list[str] | None = None,
         live: bool | None = None,
+        season_type: SeasonType | None = None,
         limit: int | None = None,
         offset: int | None = None,
     ) -> APIResponse[list[Event]]:
-        """List events."""
+        """List events.
+
+        ``season_type`` filters on ``"Preseason"`` or ``"Regular Season"``
+        (case-insensitive; ``regular_season`` also works). Events with an
+        unknown season type are never matched by it.
+        """
         data = self._client._get("/events", {
             "sport": sport,
             "league": league,
             "is_live": live,
+            "season_type": season_type,
             "limit": limit,
             "offset": offset,
         })
@@ -753,6 +764,7 @@ class _StreamResource:
         league: str | list[str] | None = None,
         sport: str | list[str] | None = None,
         market: str | list[str] | None = None,
+        season_type: SeasonType | None = None,
     ) -> EventStream:
         """Stream real-time odds updates.
 
@@ -767,6 +779,7 @@ class _StreamResource:
             "league": league,
             "sport": sport,
             "market": market,
+            "season_type": season_type,
         })
 
     def opportunities(
@@ -800,6 +813,7 @@ class _StreamResource:
         league: str | list[str] | None = None,
         sport: str | list[str] | None = None,
         market: str | list[str] | None = None,
+        season_type: SeasonType | None = None,
     ) -> EventStream:
         """Stream all data (odds + opportunities).
 
@@ -811,6 +825,7 @@ class _StreamResource:
             "league": league,
             "sport": sport,
             "market": market,
+            "season_type": season_type,
         })
 
     def event(

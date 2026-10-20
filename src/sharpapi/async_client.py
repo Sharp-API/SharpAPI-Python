@@ -38,6 +38,7 @@ from .models import (
     MiddleOpportunity,
     OddsLine,
     RateLimitInfo,
+    SeasonType,
     Sport,
     Sportsbook,
 )
@@ -183,6 +184,7 @@ class _AsyncOddsResource:
         live: bool | None = None,
         sort: str | None = None,
         group_by: str | None = None,
+        season_type: SeasonType | None = None,
         limit: int | None = None,
         offset: int | None = None,
     ) -> APIResponse[list[OddsLine]]:
@@ -202,6 +204,7 @@ class _AsyncOddsResource:
             "is_live": live,
             "sort": sort,
             "group_by": group_by,
+            "season_type": season_type,
             "limit": limit,
             "offset": offset,
         })
@@ -525,14 +528,21 @@ class _AsyncEventsResource:
         sport: str | None = None,
         league: str | list[str] | None = None,
         live: bool | None = None,
+        season_type: SeasonType | None = None,
         limit: int | None = None,
         offset: int | None = None,
     ) -> APIResponse[list[Event]]:
-        """List events."""
+        """List events.
+
+        ``season_type`` filters on ``"Preseason"`` or ``"Regular Season"``
+        (case-insensitive; ``regular_season`` also works). Events with an
+        unknown season type are never matched by it.
+        """
         data = await self._client._get("/events", {
             "sport": sport,
             "league": league,
             "is_live": live,
+            "season_type": season_type,
             "limit": limit,
             "offset": offset,
         })
