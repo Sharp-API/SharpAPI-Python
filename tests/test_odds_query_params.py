@@ -278,7 +278,7 @@ _SERVER_ODDS_PARAMS = frozenset({
     "max_market_width", "max_odds", "max_odds_age", "max_opportunity_age",
     "min_ev", "min_kelly", "min_market_width", "min_odds", "min_profit",
     "offset", "per_page", "player_name", "q", "selection", "sharp_book",
-    "sort", "sport", "sports", "sportsbook", "sportsbooks", "sportsbooks[]",
+    "season_type", "sort", "sport", "sports", "sportsbook", "sportsbooks", "sportsbooks[]",
     "state",
 })
 
@@ -295,6 +295,7 @@ _ODDS_KWARG_SAMPLES = {
     "live": True,
     "sort": "-odds_american",
     "group_by": "event",
+    "season_type": "Preseason",
     "limit": 1,
     "offset": 0,
 }

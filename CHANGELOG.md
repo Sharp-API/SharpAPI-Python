@@ -4,6 +4,10 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 
 ## 0.4.3 — Unreleased
 
+### Added
+
+- `season_type` (`"Preseason"` or `"Regular Season"`) on `Event` and `OddsLine`, absent when the API does not know it, and a `season_type=` filter on `events.list()`, `odds.get()` and the `stream.odds()` / `stream.all()` options (sync and async client where each exists). WebSocket subscribe does not take it.
+
 ### Fixed
 
 - `odds.get()` and `odds.best()` (sync and async) now send the event filter under the

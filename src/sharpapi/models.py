@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 T = TypeVar("T")
+
+# Season phase as reported by the API. Omitted by the API when unknown (a
+# league without a calendar, a date outside it, or no start time); absent never
+# means regular season.
+SeasonType = Literal["Preseason", "Regular Season"]
 
 
 # =============================================================================
@@ -282,6 +287,7 @@ class OddsLine(BaseModel):
     # rather than a price-last-changed time.
     timestamp: str | None = None
     is_live: bool = False
+    season_type: SeasonType | None = None
     # True (default) = market open and bettable; False = market suspended/closed
     # with the price frozen. Absent on the wire
     # is treated as True.
@@ -729,6 +735,7 @@ class Event(BaseModel):
     away_team: str
     start_time: str | None = None
     is_live: bool = False
+    season_type: SeasonType | None = None
     status: str | None = None
     # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
