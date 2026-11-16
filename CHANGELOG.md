@@ -6,6 +6,7 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 
 ### Added
 
+- `is_team_total`, `team_name` and `team_side` on `LowHoldOpportunity`, the team-total keys the API has sent on every low-hold row since 2026-11-16. `is_team_total` is `True` for every market type containing `team_total`. `team_name` names the team whose total it is, and is `None` on rows that are not team totals. Both sides of a team-total row are that team's total: the API does not list a team-total pair whose team it cannot name. `team_side` is `"home"` or `"away"`, the row's `home_team` or `away_team`, and is `None` when the team did not match one of the event's teams.
 - `season_type` (`"Preseason"` or `"Regular Season"`) on `Event` and `OddsLine`, absent when the API does not know it, and a `season_type=` filter on `events.list()`, `odds.get()` and the `stream.odds()` / `stream.all()` options (sync and async client where each exists). WebSocket subscribe does not take it.
 
 ### Fixed
