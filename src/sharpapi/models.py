@@ -585,6 +585,16 @@ class LowHoldSide(BaseModel):
     selection: str
     books: list[str] | None = None
     line: float | None = None
+    # Flat on the wire, like ``MiddleSide``.
+    odds_american: int | float | None = None
+    odds_decimal: float | None = None
+    odds_probability: float | None = None
+    fair_probability: float | None = None
+    deep_link: str | None = None
+    external_event_id: str | None = None
+    market_id: str | None = None
+    selection_id: str | None = None
+    # Deprecated: the API does not send these; kept for one release.
     odds: OddsValue | None = None
     deep_links: dict[str, str] | None = None
 

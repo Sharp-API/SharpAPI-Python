@@ -352,3 +352,26 @@ def test_store_readiness_keeps_fields_it_does_not_declare():
 
     assert store.reason == "store_empty"
     assert store.model_extra == {"books_without_rows": ["pinnacle", "fanduel"]}
+
+
+def test_low_hold_side_reads_flat_fields():
+    side = {
+        "books": ["bookA"],
+        "deep_link": "https://example.com/bet",
+        "external_event_id": "e1",
+        "fair_probability": 0.5,
+        "line": 2.5,
+        "market_id": "m1",
+        "odds_american": -110,
+        "odds_decimal": 1.91,
+        "odds_probability": 0.52,
+        "selection": "over",
+        "selection_id": "s1",
+    }
+    from sharpapi.models import LowHoldSide
+
+    parsed = LowHoldSide.model_validate(side)
+    assert parsed.odds_american == -110
+    assert parsed.odds_decimal == 1.91
+    assert parsed.fair_probability == 0.5
+    assert parsed.deep_link == "https://example.com/bet"
