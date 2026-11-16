@@ -31,6 +31,7 @@ from sharpapi.models import (
     Event,
     EVOpportunity,
     League,
+    LowHoldOpportunity,
     MiddleOpportunity,
     MiddleSide,
     OddsLine,
@@ -69,6 +70,25 @@ def test_middle_side_reads_flat_odds():
         parsed = MiddleSide.model_validate(side)
         assert parsed.odds_american == side["odds_american"]
         assert parsed.odds_decimal == side["odds_decimal"]
+
+
+def test_low_hold_team_total_fields_populate():
+    """is_team_total / team_name / team_side reach the model through the parse path."""
+    payload = json.loads((FIXTURES / "low_hold_live.json").read_text())
+    rows = _rows("low_hold_live.json")
+    parsed = parse_response(payload, LowHoldOpportunity).data
+    assert len(parsed) == len(rows) == 2
+    for opp, raw in zip(parsed, rows):
+        assert opp.is_team_total is raw["is_team_total"]
+        assert opp.team_name == raw["team_name"]
+        assert opp.team_side == raw.get("team_side")
+    team, other = parsed
+    assert team.is_team_total is True, "recapture: row 0 must be a team-total row"
+    assert team.team_side in ("home", "away")
+    assert team.team_name == (team.home_team if team.team_side == "home" else team.away_team)
+    assert other.is_team_total is False, "recapture: row 1 must not be a team total"
+    assert other.team_name is None
+    assert other.team_side is None
 
 
 def test_ev_confidence_score_populates_from_wire_confidence():
@@ -110,6 +130,7 @@ def test_ev_quality_tier_populates():
         (Sportsbook, "sportsbooks_live.json", lambda rows: rows),
         (OddsLine, "odds_live.json", lambda rows: rows),
         (BestOddsSelection, "odds_best_live.json", lambda rows: rows),
+        (LowHoldOpportunity, "low_hold_live.json", lambda rows: rows),
     ],
     ids=[
         "MiddleSide",
@@ -119,6 +140,7 @@ def test_ev_quality_tier_populates():
         "Sportsbook",
         "OddsLine",
         "BestOddsSelection",
+        "LowHoldOpportunity",
     ],
 )
 def test_no_required_field_is_absent_from_the_wire(model, fixture, extract):

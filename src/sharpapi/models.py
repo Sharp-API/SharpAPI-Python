@@ -625,6 +625,15 @@ class LowHoldOpportunity(BaseModel):
     is_player_prop: bool = False
     player_name: str | None = None
     stat_category: str | None = None
+    # Team totals: every market type containing "team_total". The API sends
+    # is_team_total and team_name on every row (team_name is None when the row
+    # is not a team total). Both sides of a team-total row are team_name's
+    # total; a team-total pair whose team cannot be named is not listed.
+    # team_side ("home" | "away") says which of home_team / away_team is
+    # team_name, and is only sent when the team matched one of the event's teams.
+    is_team_total: bool = False
+    team_name: str | None = None
+    team_side: str | None = None
     detected_at: str | None = None
     # Optional structured refs (additive, non-breaking).
     home: TeamRef | None = None
