@@ -7,6 +7,7 @@ All notable changes to the `sharpapi` Python SDK are documented here.
 ### Added
 
 - `season_type` (`"Preseason"` or `"Regular Season"`) on `Event` and `OddsLine`, absent when the API does not know it, and a `season_type=` filter on `events.list()`, `odds.get()` and the `stream.odds()` / `stream.all()` options (sync and async client where each exists). WebSocket subscribe does not take it.
+- `last_trade_american`, `last_trade_decimal`, `last_trade_probability` and `last_trade_at` on `OddsLine`: the price an exchange selection last traded at, in the row's three price formats, and when. The API sends all four or none; `None` means no known trade. Exchanges only (Smarkets).
 
 ### Fixed
 

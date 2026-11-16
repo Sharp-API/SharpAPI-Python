@@ -281,6 +281,15 @@ class OddsLine(BaseModel):
         validation_alias=AliasChoices("odds_probability", "probability")
     )
     line: float | None = None
+    # Exchange last trade print: the price this selection last traded at on
+    # the exchange, in the row's three price formats, and when (ISO 8601 UTC).
+    # The API sends all four or none; None means no known trade. Exchanges
+    # only (Smarkets). last_trade_probability is the exchange's own figure,
+    # strictly between 0 and 1; the other two prices are converted from it.
+    last_trade_american: int | None = None
+    last_trade_decimal: float | None = None
+    last_trade_probability: float | None = None
+    last_trade_at: str | None = None
     event_start_time: str | None = None
     # ISO 8601 — when SharpAPI last refreshed this odd through its pipeline
     # (advances every ingest cycle). A feed-freshness / delivery signal,
