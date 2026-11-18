@@ -295,6 +295,11 @@ class OddsLine(BaseModel):
     # (advances every ingest cycle). A feed-freshness / delivery signal,
     # rather than a price-last-changed time.
     timestamp: str | None = None
+    # ISO 8601 — when this row's price last changed: a new price, line, live
+    # status or suspension, or an order-book / size change. It does not move
+    # when an unchanged row is re-read, so it tells a frozen price from a fresh
+    # one. None when the API sends no change time.
+    price_updated_at: str | None = None
     is_live: bool = False
     season_type: SeasonType | None = None
     # True (default) = market open and bettable; False = market suspended/closed
@@ -363,6 +368,10 @@ class BestOddsSelection(BaseModel):
     best_book: str | None = None
     all_books: list[BestOddsBook] = Field(default_factory=list)
     timestamp: str | None = None
+    # ISO 8601 — when the best book's own price last changed (the book in
+    # ``best_book``), not the newest change across books. See
+    # ``OddsLine.price_updated_at``.
+    price_updated_at: str | None = None
 
     model_config = {"extra": "allow"}
 
