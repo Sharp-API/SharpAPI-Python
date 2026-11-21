@@ -397,3 +397,34 @@ def test_low_hold_side_reads_flat_fields():
     assert parsed.odds_decimal == 1.91
     assert parsed.fair_probability == 0.5
     assert parsed.deep_link == "https://example.com/bet"
+
+
+# The four last_trade_* keys exactly as the API serializes them for a Smarkets
+# trade at 12.2% (the server's own serialization test uses these values). Live
+# fixtures carry none of them yet, so the row is a captured row plus the print.
+_LAST_TRADE_PRINT = {
+    "last_trade_american": 720,
+    "last_trade_decimal": 8.2,
+    "last_trade_probability": 0.122,
+    "last_trade_at": "2026-11-15T18:42:07Z",
+}
+
+
+def test_odds_line_reads_the_exchange_last_trade_print():
+    row = {**_rows("odds_live.json")[0], "sportsbook": "smarkets", **_LAST_TRADE_PRINT}
+    parsed = parse_response({"data": [row]}, OddsLine).data[0]
+
+    assert parsed.last_trade_american == 720
+    assert type(parsed.last_trade_american) is int
+    assert parsed.last_trade_decimal == 8.2
+    assert parsed.last_trade_probability == 0.122
+    assert parsed.last_trade_at == "2026-11-15T18:42:07Z"
+
+
+def test_odds_line_without_a_trade_print_reads_none_for_all_four():
+    row = _rows("odds_live.json")[0]
+    assert not [k for k in row if k.startswith("last_trade")]
+
+    parsed = OddsLine.model_validate(row)
+
+    assert [getattr(parsed, k) for k in _LAST_TRADE_PRINT] == [None] * 4
