@@ -705,6 +705,32 @@ class League(BaseModel):
     model_config = {"populate_by_name": True, "extra": "allow"}
 
 
+class SportsbookOutage(BaseModel):
+    """How long a sportsbook has had no data. Attached at ``Sportsbook.outage``.
+
+    Sent only on a row whose ``idle_reason`` is ``"feed_gap"``, and only when
+    SharpAPI has evidence of when the data stopped; every other row has
+    ``outage: null``.
+
+    - ``extended`` — ``True`` once the book has been unobserved for at least
+      ``threshold_hours``; ``False`` for a fresh gap.
+    - ``unobserved_since`` — UTC time (RFC 3339) from which SharpAPI has seen
+      no data for the book. For a book that has never had data, the time
+      SharpAPI started watching it.
+    - ``threshold_hours`` — hours without data after which ``extended``
+      becomes ``True``.
+
+    Every field is optional, as on ``StoreReadiness``: a diagnostic block must
+    never be the thing that fails to parse.
+    """
+
+    extended: bool | None = None
+    unobserved_since: str | None = None
+    threshold_hours: int | float | None = None
+
+    model_config = {"extra": "allow"}
+
+
 class Sportsbook(BaseModel):
     id: str
     # As on ``League``: the wire calls this ``display_name``.
@@ -713,8 +739,9 @@ class Sportsbook(BaseModel):
     # Never sent by /sportsbooks — see the note on ``Sport``.
     slug: str | None = None
     # The wire carries availability as the STRING ``status`` ("active",
-    # "outage", ...), not a boolean. ``active`` is derived from it below so
-    # that existing ``book.active`` readers keep working.
+    # "inactive", or "coming_soon" for a book announced but not launched yet),
+    # not a boolean. ``active`` is derived from it below so that existing
+    # ``book.active`` readers keep working.
     status: str | None = None
     active: bool | None = None
     coming_soon: bool | None = None
@@ -722,9 +749,33 @@ class Sportsbook(BaseModel):
     is_sharp: bool | None = None
     has_live_odds: bool | None = None
     has_player_props: bool | None = None
+    # Which side of the market the prices are for: "back" on an ordinary book
+    # (the price to bet on the selection), "lay" on an exchange's lay side (the
+    # price to bet against it, which cannot be compared with back prices). Read
+    # any value other than "back" as "not back prices".
+    pricing_model: str | None = None
+    # True for a daily fantasy pick'em product: its entries are not bets placed
+    # at the quoted price, so keep these books apart when comparing prices.
+    is_pickem: bool | None = None
+    # Whether the book publishes per-selection bet limits (``max_bet`` on odds
+    # rows). None when no rows have been observed: that is not False.
+    has_limits: bool | None = None
     requires_tier: str | None = None
+    # Number of matches (games) the book has odds for right now. Futures
+    # markets are not counted.
     event_count: int | None = None
     last_update: str | None = None
+    # True when the book is backed by odds data the API is serving right now.
+    currently_serving: bool | None = None
+    # Why a book with no data has none, when known: "no_demand", "feed_gap" or
+    # "paused". None in every other case; do not read it as a fault. More values
+    # may be added: treat one you do not recognise as None.
+    idle_reason: str | None = None
+    # How long a "feed_gap" book has had no data; None on every other row.
+    outage: SportsbookOutage | None = None
+    # Link to the book's logo, a square PNG; None when the book has no logo
+    # yet. Arrives with a coming API release; None until then.
+    logo: str | None = None
     regions: list[str] | None = None
     features: list[str] | None = None
     # Optional integer numerical ID, additive.
