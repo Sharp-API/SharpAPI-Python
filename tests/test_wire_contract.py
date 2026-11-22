@@ -22,8 +22,10 @@ import json
 import re
 from pathlib import Path
 
+import httpx
 import pytest
 
+from sharpapi import AsyncSharpAPI, SharpAPI
 from sharpapi._base import parse_response
 from sharpapi.models import (
     AccountInfo,
@@ -38,6 +40,7 @@ from sharpapi.models import (
     ResponseMeta,
     Sport,
     Sportsbook,
+    SportsbookOutage,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -428,3 +431,137 @@ def test_odds_line_without_a_trade_print_reads_none_for_all_four():
     parsed = OddsLine.model_validate(row)
 
     assert [getattr(parsed, k) for k in _LAST_TRADE_PRINT] == [None] * 4
+
+
+# --------------------------------------------------------------------------- #
+# Sportsbook rows, read through client.sportsbooks.list() as a customer does
+# --------------------------------------------------------------------------- #
+
+
+def _answering(payload: dict) -> httpx.MockTransport:
+    return httpx.MockTransport(lambda request: httpx.Response(200, json=payload))
+
+
+def _books(payload: dict) -> dict[str, Sportsbook]:
+    """``client.sportsbooks.list()`` against ``payload``, keyed by book id."""
+    client = SharpAPI("sk_test")
+    client._http = httpx.Client(base_url=client._http.base_url, transport=_answering(payload))
+    return {book.id: book for book in client.sportsbooks.list().data}
+
+
+def test_sportsbooks_list_declares_every_live_key():
+    """Every key on every captured row lands on a declared field, none in extras."""
+    payload = _payload("sportsbooks_live.json")
+    books = _books(payload)
+    assert set(books) == {row["id"] for row in payload["data"]}
+    for book in books.values():
+        assert book.model_extra == {}, f"{book.id}: undeclared wire keys {book.model_extra}"
+
+
+def test_sportsbooks_list_types_the_new_fields():
+    payload = _payload("sportsbooks_live.json")
+    books = _books(payload)
+    for row in payload["data"]:
+        book = books[row["id"]]
+        assert type(book.is_pickem) is bool
+        assert type(book.currently_serving) is bool
+        assert isinstance(book.pricing_model, str)
+        assert book.has_limits is None or type(book.has_limits) is bool
+        assert book.idle_reason is None or isinstance(book.idle_reason, str)
+        for key in ("pricing_model", "is_pickem", "has_limits", "currently_serving", "idle_reason"):
+            assert getattr(book, key) == row[key], f"{book.id}.{key}"
+
+
+# No book had a feed gap when the fixture was captured, so the feed-gap row is
+# the captured draftkings_predictions row with the gap it reported in an earlier
+# capture (2026-11-21): these keys, with these values.
+_FEED_GAP = {
+    "event_count": 0,
+    "last_update": None,
+    "has_limits": None,
+    "currently_serving": False,
+    "idle_reason": "feed_gap",
+    "outage": {"extended": True, "unobserved_since": "2026-11-16T20:05:06Z", "threshold_hours": 24},
+}
+
+
+def _with_feed_gap(payload: dict) -> dict:
+    """``payload`` with the draftkings_predictions row given ``_FEED_GAP``."""
+    ids = [row["id"] for row in payload["data"]]
+    assert "draftkings_predictions" in ids, "recapture: keep the draftkings_predictions row"
+    rows = [
+        {**row, **_FEED_GAP} if row["id"] == "draftkings_predictions" else row
+        for row in payload["data"]
+    ]
+    return {**payload, "data": rows}
+
+
+def test_sportsbooks_list_lay_paused_and_feed_gap_rows():
+    payload = _with_feed_gap(_payload("sportsbooks_live.json"))
+    books = _books(payload)
+    wire = {row["id"]: row for row in payload["data"]}
+
+    assert books["betonline"].pricing_model == "back"
+    assert books["betonline"].has_limits is False
+    assert books["smarkets_lay"].pricing_model == "lay"
+    assert books["draftkings_pick2"].is_pickem is True
+
+    paused = books["betfair_lay"]
+    assert paused.pricing_model == "lay"
+    assert paused.idle_reason == "paused"
+    assert paused.currently_serving is False
+    assert paused.has_limits is None, "recapture: this row must carry has_limits: null"
+    assert paused.outage is None
+
+    gap = books["draftkings_predictions"]
+    assert gap.idle_reason == "feed_gap"
+    assert isinstance(gap.outage, SportsbookOutage), "recapture: need a row with an outage"
+    raw = wire["draftkings_predictions"]["outage"]
+    assert gap.outage.extended is raw["extended"]
+    assert gap.outage.unobserved_since == raw["unobserved_since"]
+    assert gap.outage.threshold_hours == raw["threshold_hours"]
+    assert type(gap.outage.threshold_hours) is int
+    assert gap.outage.model_extra == {}
+
+
+async def test_async_sportsbooks_list_reads_the_outage_block():
+    client = AsyncSharpAPI("sk_test")
+    client._http = httpx.AsyncClient(
+        base_url=client._http.base_url,
+        transport=_answering(_with_feed_gap(_payload("sportsbooks_live.json"))),
+    )
+    books = (await client.sportsbooks.list()).data
+    gaps = [book for book in books if book.idle_reason == "feed_gap"]
+    assert gaps and all(isinstance(book.outage, SportsbookOutage) for book in gaps)
+    assert {book.pricing_model for book in books} == {"back", "lay"}
+
+
+@pytest.mark.parametrize(
+    ("status", "active"), [("active", True), ("inactive", False), ("coming_soon", False)]
+)
+def test_sportsbook_active_for_each_live_status(status, active):
+    book = Sportsbook.model_validate({"id": "x", "display_name": "X", "status": status})
+    assert book.active is active
+
+
+# ``logo`` is on every row: a link to the book's logo, or null when the book has
+# none yet.
+
+
+def test_sportsbooks_list_reads_the_captured_logo_links():
+    payload = _payload("sportsbooks_live.json")
+    assert not [row["id"] for row in payload["data"] if "logo" not in row]
+    books = _books(payload)
+    for row in payload["data"]:
+        book = books[row["id"]]
+        assert isinstance(book.logo, str), book.id
+        assert book.logo == row["logo"]
+
+
+def test_sportsbooks_list_reads_a_null_logo_as_none():
+    # No captured row has a null logo, so this row is a captured row with the
+    # key set to null.
+    row = {**_rows("sportsbooks_live.json")[0], "logo": None}
+    (book,) = _books({"data": [row]}).values()
+    assert book.logo is None
+    assert book.model_extra == {}
