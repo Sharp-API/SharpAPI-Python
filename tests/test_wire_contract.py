@@ -472,8 +472,32 @@ def test_sportsbooks_list_types_the_new_fields():
             assert getattr(book, key) == row[key], f"{book.id}.{key}"
 
 
+# No book had a feed gap when the fixture was captured, so the feed-gap row is
+# the captured draftkings_predictions row with the gap it reported in an earlier
+# capture (2026-11-21): these keys, with these values.
+_FEED_GAP = {
+    "event_count": 0,
+    "last_update": None,
+    "has_limits": None,
+    "currently_serving": False,
+    "idle_reason": "feed_gap",
+    "outage": {"extended": True, "unobserved_since": "2026-11-16T20:05:06Z", "threshold_hours": 24},
+}
+
+
+def _with_feed_gap(payload: dict) -> dict:
+    """``payload`` with the draftkings_predictions row given ``_FEED_GAP``."""
+    ids = [row["id"] for row in payload["data"]]
+    assert "draftkings_predictions" in ids, "recapture: keep the draftkings_predictions row"
+    rows = [
+        {**row, **_FEED_GAP} if row["id"] == "draftkings_predictions" else row
+        for row in payload["data"]
+    ]
+    return {**payload, "data": rows}
+
+
 def test_sportsbooks_list_lay_paused_and_feed_gap_rows():
-    payload = _payload("sportsbooks_live.json")
+    payload = _with_feed_gap(_payload("sportsbooks_live.json"))
     books = _books(payload)
     wire = {row["id"]: row for row in payload["data"]}
 
@@ -504,7 +528,7 @@ async def test_async_sportsbooks_list_reads_the_outage_block():
     client = AsyncSharpAPI("sk_test")
     client._http = httpx.AsyncClient(
         base_url=client._http.base_url,
-        transport=_answering(_payload("sportsbooks_live.json")),
+        transport=_answering(_with_feed_gap(_payload("sportsbooks_live.json"))),
     )
     books = (await client.sportsbooks.list()).data
     gaps = [book for book in books if book.idle_reason == "feed_gap"]
@@ -520,25 +544,24 @@ def test_sportsbook_active_for_each_live_status(status, active):
     assert book.active is active
 
 
-# ``logo`` arrives with a coming API release, on every row: a link to the book's
-# logo, or null when the book has none yet. The live fixture cannot carry it, so
-# the rows below are a captured row plus the key. The link is an example value.
-_LOGO = "https://example.com/logos/betonline.png"
+# ``logo`` is on every row: a link to the book's logo, or null when the book has
+# none yet.
 
 
-def test_sportsbook_fixture_carries_no_logo_yet():
-    """Once this fails, the API sends ``logo``: recapture and drop the not-live notes."""
-    assert not [row["id"] for row in _rows("sportsbooks_live.json") if "logo" in row]
+def test_sportsbooks_list_reads_the_captured_logo_links():
+    payload = _payload("sportsbooks_live.json")
+    assert not [row["id"] for row in payload["data"] if "logo" not in row]
+    books = _books(payload)
+    for row in payload["data"]:
+        book = books[row["id"]]
+        assert isinstance(book.logo, str), book.id
+        assert book.logo == row["logo"]
 
 
-@pytest.mark.parametrize("logo", [_LOGO, None], ids=["link", "null"])
-def test_sportsbooks_list_reads_logo(logo):
-    row = {**_rows("sportsbooks_live.json")[0], "logo": logo}
+def test_sportsbooks_list_reads_a_null_logo_as_none():
+    # No captured row has a null logo, so this row is a captured row with the
+    # key set to null.
+    row = {**_rows("sportsbooks_live.json")[0], "logo": None}
     (book,) = _books({"data": [row]}).values()
-    assert book.logo == logo
-    assert book.model_extra == {}
-
-
-def test_sportsbook_row_without_logo_reads_none():
-    (book,) = _books({"data": [_rows("sportsbooks_live.json")[0]]}).values()
     assert book.logo is None
+    assert book.model_extra == {}

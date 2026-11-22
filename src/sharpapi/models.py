@@ -774,7 +774,7 @@ class Sportsbook(BaseModel):
     # How long a "feed_gap" book has had no data; None on every other row.
     outage: SportsbookOutage | None = None
     # Link to the book's logo, a square PNG; None when the book has no logo
-    # yet. Arrives with a coming API release; None until then.
+    # yet. The API sends it on every row.
     logo: str | None = None
     regions: list[str] | None = None
     features: list[str] | None = None
