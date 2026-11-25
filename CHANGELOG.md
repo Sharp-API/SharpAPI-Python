@@ -2,7 +2,7 @@
 
 All notable changes to the `sharpapi` Python SDK are documented here.
 
-## 0.4.3 — Unreleased
+## 0.4.3 — 2026-11-24
 
 ### Added
 
